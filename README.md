@@ -1,6 +1,6 @@
 # Tempchan
 
-[Tempchan](https://tempchan.com) is a platform for making throwaway discussion boards, which are:
+[Tempchan](https://tempchan.com) is a tool for making throwaway discussion boards, which are:
 
 * Anonymous - No account is required.
 * Private - Each board has a secret link, and only people with the link can read or write posts. (This is enforced by end-to-end encryption.)

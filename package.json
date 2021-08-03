@@ -1,0 +1,8 @@
+{
+  "name": "tempchan",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "serverless-mysql": "1.5.4"
+  }
+}

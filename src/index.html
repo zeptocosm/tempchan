@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title id="htmlTitle">Tempchan : throwaway discussion boards</title>
+<style>
+body {
+	background-color: #eee;
+	font-family: Tahoma, Helvetica, sans-serif;
+}
+
+h1, #homePage>p, #myBoardsDiv, #myBoardsDiv *, #loadingPage *, #badLinkPage * {
+	text-align: center;
+}
+
+#creationForm {
+	width: 720px;
+	padding: 10px;
+	padding-top: 0;
+	border: 4px solid black;
+	background-color: white;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.error {
+	color: red;
+}
+
+#boardPage {
+	margin-left: 5%;
+	margin-right: 5%;
+}
+
+.thread {
+	border: 1px solid black;
+	padding: 5px;
+	margin-top: 20px;
+}
+.thread.top {
+	margin-top: 0;
+}
+
+.post p {
+	margin-left: 10px;
+	margin-right: 10px;
+	text-align: justify;
+}
+
+.highlit {
+	background-color: white;
+}
+
+.greentext {
+	color: #090;
+}
+
+.pagination {
+	margin-top: 15px;
+	margin-bottom: 15px;
+}
+
+.hidden {
+	display: none;
+}
+
+#myBoardsList a {
+	margin-right: 10px;
+}
+
+</style>
+</head>
+<body>
+
+<div id="loadingPage" class="hidden"><h2>Loading...</h2></div>
+
+<div id="badLinkPage" class="hidden">
+	<h2>Bad link!</h2>
+	<p>The thing you're looking for doesn't exist, or has expired.</p>
+	<p><a href="/">Back to home</a></p>
+</div>
+
+
+<div id="homePage">
+
+<h1>Tempchan</h1>
+
+<p><b>Tempchan</b> is a way of making anonymous, private, temporary discussion boards.</p>
+
+<p class="error" id="noscriptWarning">Tempchan requires JavaScript to run, in order to encrypt and decrypt messages in your web browser.</p>
+<script>document.getElementById("noscriptWarning").style = "display:none";</script>
+
+<div id="myBoardsDiv" class="hidden">
+<h3>My boards</h3>
+<p><span id="myBoardsList"></span><button onclick="clearMyBoards()">Clear</button></p>
+</div>
+
+<div id="creationForm">
+<h2>Create a new board</h2>
+<table>
+<tr>
+	<th>Title</th>
+	<td><input type="text" placeholder="Untitled" id="newBoardTitle"/></td>
+	<td>(max 30 characters)</td>
+	<td class="error" id="titleError"></td>
+</tr>
+<tr>
+	<th>Description</th>
+	<td><textarea cols="30" rows="4" placeholder="(optional)" id="newBoardDescription"></textarea></td>
+	<td>(max 300 characters)</td>
+	<td class="error" id="descriptionError"></td>
+</tr>
+<tr>
+	<th>Lifespan (days)</th>
+	<td><input type="text" style="width:30px" id="newBoardLifespan"/></td>
+	<td>(max 35 days)</td>
+	<td class="error" id="lifespanError"></td>
+</tr>
+</table>
+
+<ul>
+	<li>Once the board is created, these settings cannot be changed. Copy its link and share it with others to invite them.</li>
+	<li>Anyone with the link can read and write posts on the board, but nobody else can. Posts cannot be deleted once submitted.</li>
+	<li>The board (and all of its posts) will be deleted at midnight (GMT) after the given lifespan has elapsed.</li>
+</ul>
+
+<button id="createBoardButton" onclick="createBoard()">Create board and take me there</button>
+
+</div>
+
+<hr/>
+<p><a href="https://github.com/zeptocosm/tempchan">Source code</a></p>
+
+</div><!-- homePage -->
+
+
+<div id="boardPage" class="hidden">
+
+<h1><a href="">Tempchan</a> | <span id="boardTitle"></span></h1>
+
+<h3 style="text-align: center">Time till deletion: <span id="deletionCountdown"></span></h3>
+
+<p id="boardDescription"></p>
+
+<textarea id="newThreadText" cols="60" rows="5"></textarea><br/>
+<button id="newThreadButton" onclick="newThread()">Post new thread</button>
+
+<hr/>
+
+<div id="threadsView"></div>
+
+</div> <!-- boardPage -->
+
+
+<div id="threadPage" class="hidden">
+
+<h1><a href="">Tempchan</a> | <a href="" id="threadBoardTitle">(board title)</a> | #<span id="threadHeader"></span></h1>
+
+<div id="fullThread"></div>
+
+<textarea id="replyText" cols="60" rows="5"></textarea>
+<br/>
+<button id="postReplyButton" onclick="postReply()">Reply</button>
+
+</div> <!-- threadPage -->
+
+
+<!-- https://github.com/bitwiseshiftleft/sjcl/releases/tag/1.0.8 -->
+<script src="static/sjcl/sjcl.js"></script>
+
+<script>
+const httpPost = function(url, data, cb) {
+	var xhr = new XMLHttpRequest();
+	xhr.open("POST", url);
+	xhr.setRequestHeader("Accept", "application/json");
+	xhr.setRequestHeader("Content-Type", "application/json");
+	xhr.onreadystatechange = function () {
+		if (xhr.readyState === 4) {
+			if (xhr.status === 200) {
+				cb({ok: true, responseText: xhr.responseText});
+			} else {
+				cb(xhr);
+			}
+		}
+	};
+	xhr.send(JSON.stringify(data));
+}
+
+const httpGet = function(url, cb) {
+	var xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = function() { 
+		if (xhr.readyState === 4) {
+			if (xhr.status === 200) {
+				cb({ok: true, responseText: xhr.responseText});
+			} else {
+				cb(xhr);
+			}
+		}
+	}
+	xhr.open("GET", url, true);
+	xhr.send(null);
+}
+
+
+const stripCiphertext = function(fullCiphertext) {
+	return {iv: fullCiphertext.iv, salt: fullCiphertext.salt, ct: fullCiphertext.ct};
+};
+
+const expandCiphertext = function(strippedCiphertext) {
+	return {"v":1,"iter":10000,"ks":128,"ts":64,"mode":"ccm","adata":"","cipher":"aes", ...strippedCiphertext};
+};
+
+const encryptionCache = {};
+
+const encrypt = function(key, plaintext) {
+	let ciphertext = JSON.stringify(stripCiphertext(JSON.parse(sjcl.encrypt(key, plaintext))));
+	let cacheKey = key + ":" + ciphertext;
+	if (!encryptionCache[cacheKey]) {
+		encryptionCache[cacheKey] = plaintext;
+	}
+	return ciphertext;
+};
+
+const decrypt = function(key, ciphertext) {
+	let cacheKey = key + ":" + ciphertext;
+	if (encryptionCache[cacheKey]) {
+		return encryptionCache[cacheKey];
+	} else {
+		let plaintext;
+		try {
+			plaintext = sjcl.decrypt(key, JSON.stringify(expandCiphertext(JSON.parse(ciphertext))));
+			encryptionCache[cacheKey] = plaintext;
+		} catch(e) {
+			plaintext = "[[Decryption error]]";
+			console.log("Decryption error:", e);
+		}
+		return plaintext;
+	}
+};
+
+const ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const secureRandomString = function(length) {
+	let string = "";
+	for (let i=0; i<length; i++) {
+		let index = Math.abs(sjcl.random.randomWords(1)[0]) % ALPHABET.length; 
+		string += ALPHABET[index];
+	}
+	return string;
+};
+
+const SECRET_KEY_LENGTH = 22;
+const BOARD_CODE_LENGTH = 3;
+
+const MY_BOARDS_LS_KEY = "myBoards";
+
+const refreshMyBoards = function() {
+	let myBoards = JSON.parse(window.localStorage.getItem(MY_BOARDS_LS_KEY) || "[]");
+	let listElement = document.getElementById("myBoardsList");
+	let divElement = document.getElementById("myBoardsDiv");
+	if (myBoards.length) {
+		let listHtml = "";
+		for (let i=0; i<myBoards.length; i++) {
+			let entry = myBoards[i];
+			if (entry.expirationDateMs > +new Date()) {
+				listHtml += ('<a href="/#' + entry.boardSlug + '">' + entry.title + '</a> ');
+			}
+		}
+		listElement.innerHTML = listHtml;
+		divElement.classList.remove("hidden");
+	} else {
+		listElement.innerText = "";
+		divElement.classList.add("hidden");
+	}
+};
+refreshMyBoards(); // Show on initial homepage load
+
+const clearMyBoards = function() {
+	if (confirm("Are you sure? You will lose access to these boards if you have not saved their links elsewhere.")) {
+		window.localStorage.clear();
+		refreshMyBoards();
+	}
+};
+
+const addMyBoard = function(boardSlug, title, expirationDateMs) {
+	let myBoards = JSON.parse(window.localStorage.getItem(MY_BOARDS_LS_KEY) || "[]");
+	let myBoardsNew = [];
+
+	let shouldAdd = true;
+	for (let i=0; i<myBoards.length; i++) {
+		let entry = myBoards[i];
+		if (entry.boardSlug === boardSlug) {
+			shouldAdd = false;
+		}
+		if (entry.expirationDateMs > +new Date()) {
+			myBoardsNew.push(entry);
+		}
+	}
+	if (shouldAdd) {
+		myBoardsNew.push({boardSlug, title, expirationDateMs});
+	}
+	
+	window.localStorage.setItem(MY_BOARDS_LS_KEY, JSON.stringify(myBoardsNew));
+}
+
+const createBoard = function() {
+	let title = document.getElementById("newBoardTitle").value.trim() || "(Untitled)";
+	let description = document.getElementById("newBoardDescription").value.trim() || "(No description)";
+	let lifespanDays = parseInt(document.getElementById("newBoardLifespan").value.trim());
+
+	clearErrors();
+	let anyErrors = false;
+	if (title.length > 30) {
+		document.getElementById("titleError").innerText = "Too long (" + title.length + " characters)";
+		anyErrors = true;
+	}
+	if (description.length > 300) {
+		document.getElementById("descriptionError").innerText = "Too long (" + description.length + " characters)";
+		anyErrors = true;
+	}
+	if (isNaN(lifespanDays)) {
+		document.getElementById("lifespanError").innerText = "Must be a number"
+		anyErrors = true;
+	} else if (lifespanDays > 35) {
+		document.getElementById("lifespanError").innerText = "Too large"
+		anyErrors = true;
+	}
+	if (anyErrors) {
+		return;
+	}
+
+	let secretKey = secureRandomString(SECRET_KEY_LENGTH);
+
+	let button = document.getElementById("createBoardButton");
+	button.disabled = true;
+
+	let titleCtString = encrypt(secretKey, title);
+	let descriptionCtString = encrypt(secretKey, description);
+
+	httpPost("/api/create_board", {
+		lifespan_days: lifespanDays,
+		title_ct: titleCtString,
+		description_ct: descriptionCtString
+	}, function(response) {
+		if (response.ok) {
+			window.location.hash = secretKey + response.responseText;
+		} else {
+			alert("Error creating board! " + JSON.stringify(response));
+		}
+		button.disabled = null;
+	});
+};
+
+
+const postReply = function() {
+	let text = document.getElementById("replyText").value.trim();
+	if (!text.length) {
+		return;
+	}
+	if (text.length > 10000) {
+		alert("Post is too long (>10000 characters)");
+		return;
+	}
+
+	let splitHash = window.location.hash.slice(1).split("/");
+	let boardSlug = splitHash[0];
+	let lastPart = splitHash[2];
+	let opId = lastPart.split("#")[0];
+
+	let secretKey = boardSlug.substring(0, boardSlug.length-BOARD_CODE_LENGTH);
+	let boardCode = boardSlug.substring(boardSlug.length-BOARD_CODE_LENGTH);
+
+
+	let button = document.getElementById("postReplyButton");
+	button.disabled = true;
+
+	let textCt = encrypt(secretKey, text);
+
+	httpPost("/api/create_post", {
+		text_ct: textCt,
+		board_code: boardCode,
+		parent_post_id: opId
+	}, function(response) {
+		if (response.ok) {
+			let currentHash = window.location.hash.slice(1);
+			if (currentHash.indexOf("#") !== -1) {
+				currentHash = currentHash.split("#")[0];
+			}
+			let newHash = currentHash + "#" + response.responseText;
+			window.location.hash = newHash;
+		} else {
+			alert("Error creating post! " + JSON.stringify(response));
+		}
+		button.disabled = null;
+	});
+}
+
+
+const renderText = function(original, postIdsOnPage, threadHash, mentionedPostsOutput) {
+	let paragraphs = original.trim().split(/\n\n+/);
+	let result = "";
+	for (let i=0; i<paragraphs.length; i++) {
+		let paragraph = paragraphs[i];
+		let lines = paragraph.split("\n");
+		result += "<p>";
+		for (let j=0; j<lines.length; j++) {
+			let line = lines[j].trim();
+			let green = line.startsWith(">") && !line.startsWith(">>");
+			let escapedLine = line
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;");
+
+			let words = escapedLine.split(" ");
+			let linkifiedLine = "";
+			for (let k=0; k<words.length; k++) {
+				let word = words[k];
+				let wordSubstring = word.substring(8);
+				let mentionedPost = parseInt(wordSubstring);
+				if (postIdsOnPage &&
+					word.startsWith("&gt;&gt;") &&
+					!isNaN(mentionedPost) &&
+					wordSubstring === ""+mentionedPost &&
+					postIdsOnPage.indexOf(mentionedPost) !== -1) {
+					linkifiedLine += (
+						'<a href="/#' +
+						threadHash + "#" + mentionedPost +
+						'">' + word + '</a>'
+					);
+					if (mentionedPostsOutput.indexOf(mentionedPost) === -1) {
+						mentionedPostsOutput.push(mentionedPost);
+					}
+				} else {
+					linkifiedLine += word;
+				}
+				linkifiedLine += " ";
+			}
+			linkifiedLine = linkifiedLine.trim();
+
+			if (green) {
+				result += '<span class="greentext">';
+			}
+			result += linkifiedLine;
+			if (green) {
+				result += "</span>";
+			}
+			if (j<lines.length-1) {
+				result += "<br/>";
+			}
+		}
+		result += "</p>";
+	}
+	return result;
+};
+
+
+const clearForms = function() {
+	document.getElementById("newThreadText").value = "";
+	document.getElementById("newBoardTitle").value = "";
+	document.getElementById("newBoardDescription").value = "";
+	document.getElementById("newBoardLifespan").value = "";
+	document.getElementById("replyText").value = "";
+	clearErrors();
+}
+
+const clearErrors = function() {
+	document.getElementById("titleError").innerText = "";
+	document.getElementById("descriptionError").innerText = "";
+	document.getElementById("lifespanError").innerText = "";
+}
+
+const PAGES = ["loadingPage", "badLinkPage", "homePage", "boardPage", "threadPage"];
+
+const hideAllBut = function(pageToShow) {
+	for (let i=0; i<PAGES.length; i++) {
+		let page = PAGES[i];
+		let element = document.getElementById(page);
+		if (page === pageToShow) {
+			element.classList.remove("hidden");
+		} else {
+			element.classList.add("hidden");
+		}
+	}
+}
+
+
+const formatTimestamp = function(timestampMs) {
+	return new Date(timestampMs)
+		.toISOString()
+		.replace("T", " ").replace(/\.\d\d\dZ/, "");
+}
+
+const THREAD_ON_BOARD_TEMPLATE = 
+`<div class="thread">
+<div class="post">
+<b>Anonymous</b> <a href="/#{{boardSlug}}/t/{{opId}}#{{opId}}">#{{opId}}</a> {{timestamp}}
+{{renderedText}}
+</div>
+{{lastRepliesHtml}}
+<a href="/#{{boardSlug}}/t/{{opId}}">Reply</a>
+</div>`;
+
+const POST_PREVIEW_TEMPLATE =
+`<div class="post">
+<b>Anonymous</b> <a href="/#{{boardSlug}}/t/{{opId}}#{{postId}}">#{{postId}}</a> {{timestamp}}
+{{renderedText}}
+</div>`;
+
+const HIDDEN_REPLIES_TEMPLATE = `
+<p>{{hiddenCount}} repl{{pluralEnding}} hidden; <a href="/#{{boardSlug}}/t/{{opId}}">view all</a></p>`;
+
+const MS_PER_DAY = 1000*60*60*24;
+const MS_PER_HOUR = 1000*60*60;
+const MS_PER_MINUTE = 1000*60;
+const MS_PER_SECOND = 1000;
+const formatDuration = function(durationMs) {
+	let days = Math.floor(durationMs / MS_PER_DAY);
+	durationMs -= days*MS_PER_DAY;
+	let hours = Math.floor(durationMs / MS_PER_HOUR);
+	durationMs -= hours*MS_PER_HOUR;
+	let minutes = Math.floor(durationMs / MS_PER_MINUTE);
+	durationMs -= minutes*MS_PER_MINUTE;
+	let seconds = Math.floor(durationMs / MS_PER_SECOND);
+	if (days === 0 && hours === 0 && minutes < 10) {
+		return ""
+			+ (minutes ? minutes + " minute" + (minutes === 1 ? "" : "s") + " " : "")
+			+ (seconds ? seconds + " second" + (seconds === 1 ? "" : "s") : "");
+	} else {
+		return ""
+			+ (days ? days + " day" + (days === 1 ? "" : "s") + " " : "")
+			+ (hours ? hours + " hour" + (hours === 1 ? "" : "s") + " " : "")
+			+ (minutes ? minutes + " minute" + (minutes === 1 ? "" : "s") : "");
+	}
+};
+
+const showBoard = function(boardSlug, pageNum) {
+	let secretKey = boardSlug.substring(0, boardSlug.length-BOARD_CODE_LENGTH);
+	let boardCode = boardSlug.substring(boardSlug.length-BOARD_CODE_LENGTH);
+
+	// todo: send pageNum
+	httpGet("/api/get_board?board_code=" + encodeURIComponent(boardCode), function(response) {
+		if (!response.ok) {
+			if (response.status === 404) {
+				showBadLink();
+			} else {
+				alert("Error getting board! " + JSON.stringify(response));
+			}
+			return;
+		}
+		let resObj = JSON.parse(response.responseText);
+		let boardObj = resObj.board;
+		let threads = resObj.threads;
+
+		// Board info:
+		let titleCt = boardObj.title_ct;
+		let descriptionCt = boardObj.description_ct;
+		let expirationDateMs = boardObj.expiration_date_ms;
+		let title = decrypt(secretKey, titleCt);
+		let description = decrypt(secretKey, descriptionCt);
+
+		addMyBoard(boardSlug, title, expirationDateMs);
+
+		document.getElementById("htmlTitle").innerText = title + " : Tempchan";
+		document.getElementById("boardTitle").innerText = title;
+		document.getElementById("boardDescription").innerHTML = renderText(description);
+		document.getElementById("deletionCountdown").innerText = formatDuration(expirationDateMs - new Date());
+		document.getElementById("deletionCountdown").title = formatTimestamp(expirationDateMs);
+
+		// Thread listing:
+		let threadsHtml = "";
+		for (let i=0; i<threads.length; i++) {
+			let thread = threads[i];
+			let opText = renderText(decrypt(secretKey, thread.op.text_ct));
+			let lastRepliesHtml = "";
+			if (thread.op.replies_count) {
+				let hiddenCount = thread.op.replies_count - thread.last_replies.length;
+				if (hiddenCount) {
+					lastRepliesHtml += HIDDEN_REPLIES_TEMPLATE
+						.replaceAll("{{hiddenCount}}", hiddenCount)
+						.replaceAll("{{pluralEnding}}", hiddenCount>1 ? "ies" : "y")
+						.replaceAll("{{boardSlug}}", boardSlug)
+						.replaceAll("{{opId}}", thread.op.post_id);
+				}
+				
+				// Iterate backwards since the API returns them in reverse order
+				for (let j=thread.last_replies.length-1; j>=0; j--) {
+					let reply = thread.last_replies[j];
+					let replyText = renderText(decrypt(secretKey, reply.text_ct));
+					lastRepliesHtml += POST_PREVIEW_TEMPLATE
+						.replaceAll("{{boardSlug}}", boardSlug)
+						.replaceAll("{{opId}}", thread.op.post_id)
+						.replaceAll("{{postId}}", reply.post_id)
+						.replaceAll("{{timestamp}}", formatTimestamp(reply.timestamp_ms))
+						.replaceAll("{{renderedText}}", replyText);
+				}
+			}
+			let threadHtml = THREAD_ON_BOARD_TEMPLATE
+				.replaceAll("{{boardSlug}}", boardSlug)
+				.replaceAll("{{opId}}", thread.op.post_id)
+				.replaceAll("{{timestamp}}", formatTimestamp(thread.op.timestamp_ms)
+				)
+				.replaceAll("{{renderedText}}", opText)
+				.replaceAll("{{lastRepliesHtml}}", lastRepliesHtml);
+			threadsHtml += threadHtml;
+		}
+		document.getElementById("threadsView").innerHTML = threadsHtml;
+
+		clearForms();
+		hideAllBut("boardPage");
+	});
+}
+
+const POST_ON_THREAD_TEMPLATE = `
+<div class="post{{highlightStyle}}" id="post{{postId}}">
+<b>Anonymous</b> <a href="/#{{boardSlug}}/t/{{opId}}#{{postId}}">#{{postId}}</a> <a href="javascript:mention({{postId}})" title="Mention this post">&lt;&lt;</a> {{timestamp}} {{backmentions}}
+{{renderedText}}
+</div>`;
+
+const showThread = function(boardSlug, opId, highlitPost) {
+	let secretKey = boardSlug.substring(0, boardSlug.length-BOARD_CODE_LENGTH);
+	let boardCode = boardSlug.substring(boardSlug.length-BOARD_CODE_LENGTH);
+	httpGet("/api/get_thread?board_code=" + encodeURIComponent(boardCode) + "&op_id=" + opId, function(response) {
+		if (!response.ok) {
+			if (response.status === 404) {
+				showBadLink();
+			} else {
+				alert("Error getting thread! " + JSON.stringify(response));
+			}
+			return;
+		}
+		let res = JSON.parse(response.responseText);
+		let posts = res.posts;
+		if (!posts || posts[0].parent_post_id) {
+			// Don't allow linking directly to a single reply
+			showBadLink();
+			return;
+		}
+		let board = res.board;
+		let boardTitle = decrypt(secretKey, board.title_ct);
+		addMyBoard(boardSlug, boardTitle, board.expiration_date_ms);
+
+		document.getElementById("htmlTitle").innerText =
+			boardTitle + " | #" + opId + " : Tempchan";
+		
+		// First pass: Assemble the list of postIds
+		let postIdsOnPage = [];
+		let postIdToIndex = {};
+		for (let i=0; i<posts.length; i++) {
+			let post = posts[i];
+			postIdsOnPage.push(post.post_id);
+			postIdToIndex[post.post_id] = i;
+		}
+
+		// Second pass: Render the text, and get list of mentions in each post
+		let renderedTexts = [];
+		let mentionsInEachPost = [];
+		let threadHash = boardSlug + "/t/" + opId;
+		for (let i=0; i<posts.length; i++) {
+			let post = posts[i];
+			let mentionsInPost = [];
+			let renderedText = renderText(
+				decrypt(secretKey, post.text_ct),
+				postIdsOnPage,
+				threadHash,
+				mentionsInPost
+			);
+			renderedTexts.push(renderedText);
+			mentionsInEachPost.push(mentionsInPost);
+		}
+
+		// Third pass: Invert the post -> mentions mapping
+		let mentionsOfEachPost = [];
+		for (let i=0; i<posts.length; i++) {
+			let mentions = mentionsInEachPost[i];
+			for (let j=0; j<mentions.length; j++) {
+				let mention = mentions[j];
+				let index = postIdToIndex[mention];
+				if (!mentionsOfEachPost[index]) {
+					mentionsOfEachPost[index] = [];
+				}
+				mentionsOfEachPost[index].push(postIdsOnPage[i]);
+			}
+		}
+
+		// Fourth and final pass: Assemble the HTML for the page
+		let threadHtml = "";
+		for (let i=0; i<posts.length; i++) {
+			let post = posts[i];
+
+			let mentionsOfThisPost = mentionsOfEachPost[i] || [];
+			let backmentionsHtml = "";
+			for (let j=0; j<mentionsOfThisPost.length; j++) {
+				let mention = mentionsOfThisPost[j];
+				backmentionsHtml += (
+					'<a href="/#' +
+					threadHash + 
+					"#" +
+					mention +
+					'">&gt;&gt;' +
+					mention +
+					'</a> '
+				);
+			}
+			
+			let postHtml = POST_ON_THREAD_TEMPLATE
+				.replaceAll("{{boardSlug}}", boardSlug)
+				.replaceAll("{{opId}}", opId)
+				.replaceAll("{{postId}}", post.post_id)
+				.replaceAll("{{timestamp}}", formatTimestamp(post.timestamp_ms))
+				.replaceAll("{{backmentions}}", backmentionsHtml)
+				.replaceAll("{{renderedText}}", renderedTexts[i])
+				.replaceAll("{{highlightStyle}}", highlitPost && parseInt(highlitPost) === post.post_id ? " highlit" : "");
+			threadHtml += postHtml;
+		}
+
+		document.getElementById("fullThread").innerHTML = threadHtml;
+		document.getElementById("threadBoardTitle").innerText = boardTitle;
+		document.getElementById("threadBoardTitle").href = "/#" + boardSlug;
+		document.getElementById("threadHeader").innerText = opId;
+		clearForms();
+		hideAllBut("threadPage");
+		if (highlitPost) {
+			document.getElementById("post" + parseInt(highlitPost)).scrollIntoView();
+		}
+	});
+}
+
+const mention = function(postId) {
+	let replyTextField = document.getElementById("replyText");
+	let replyTextValue = replyTextField.value;
+	let spacer = "";
+	if (replyTextValue && replyTextValue[replyTextValue.length-1].trim()) {
+		// If it ends with non-whitespace, insert whitespace
+		spacer = " ";
+	}
+	replyTextField.value = replyTextValue + spacer + ">>" + postId + " ";
+	replyTextField.scrollIntoView();
+}
+
+const rescrollThread = function(boardSlug, opId, highlitPost) {
+	let oldHighlitElement = document.getElementsByClassName("highlit")[0];
+	if (oldHighlitElement) {
+		oldHighlitElement.classList.remove("highlit");
+	}
+	if (highlitPost) {
+		let element = document.getElementById("post" + highlitPost);
+		if (element) {
+			element.classList.add("highlit");
+			element.scrollIntoView();
+		} else {
+			showLoading();
+			showThread(boardSlug, opId, highlitPost);
+		}
+
+	} else {
+		window.scrollTo(0,0);
+	}
+}
+
+const showBadLink = function() {
+	document.getElementById("htmlTitle").innerText = "Tempchan : not found";
+	hideAllBut("badLinkPage");
+}
+
+const showStatic = function(staticPage) {
+	// todo
+}
+
+const showLoading = function() {
+	hideAllBut("loadingPage");
+}
+
+const showHome = function() {
+	clearForms();
+	document.getElementById("htmlTitle").innerText = "Tempchan : throwaway discussion boards";
+	refreshMyBoards();
+	hideAllBut("homePage");
+}
+
+
+const newThread = function() {
+	let text = document.getElementById("newThreadText").value.trim();
+	if (!text.length) {
+		return;
+	}
+	if (text.length > 10000) {
+		alert("Post is too long (>10000 characters)");
+		return;
+	}
+
+	// Fix this to work with other hash types
+	let boardSlug = window.location.hash.slice(1);
+	let secretKey = boardSlug.substring(0, boardSlug.length-BOARD_CODE_LENGTH);
+	let boardCode = boardSlug.substring(boardSlug.length-BOARD_CODE_LENGTH);
+
+	let button = document.getElementById("newThreadButton");
+	button.disabled = true;
+
+	let textCtString = encrypt(secretKey, text);
+
+	httpPost("/api/create_post", {
+		text_ct: textCtString,
+		board_code: boardCode
+	}, function(response) {
+		if (response.ok) {
+			let newHash = boardSlug + "/t/" + response.responseText;
+			window.location.hash = newHash;
+		} else {
+			alert("Error creating post! " + JSON.stringify(res));
+		}
+		button.disabled = null;
+	});
+}
+
+
+const handleHash = function(oldHash) {
+	if (window.location.hash) {
+		let newHash = window.location.hash.slice(1);
+		let splitHash = newHash.split("/");
+		if (splitHash[0].length === 0) {
+			// e.g. "#/about"
+			// showStatic(splitHash[1]); // todo
+			showBadLink();
+		} else if (splitHash[0].length === SECRET_KEY_LENGTH + BOARD_CODE_LENGTH) {
+			let boardSlug = splitHash[0];
+			if (splitHash.length === 1) {
+				showLoading();
+				showBoard(boardSlug, 1);
+			} else if (splitHash.length === 2) {
+				showLoading();
+				let pageNum = parseInt(splitHash[1]);
+				if (pageNum) {
+					showBoard(boardSlug, pageNum);
+				} else {
+					showBadLink();
+				}
+			} else if (splitHash.length === 3 && splitHash[1] === "t") {
+				let lastPart = splitHash[2];
+				let opId;
+				let highlitPost = void(0);
+				if (lastPart.indexOf("#") !== -1) {
+					let lastPartSplit = lastPart.split("#");
+					opId = lastPartSplit[0];
+					highlitPost = lastPartSplit[1];
+				} else {
+					opId = lastPart;
+				}
+
+				let oldHashPrefix = oldHash && oldHash.split("#")[0];
+
+				if (oldHashPrefix && (
+					newHash === oldHashPrefix ||
+					newHash.startsWith(oldHashPrefix+"#"))
+					) {
+					rescrollThread(boardSlug, opId, highlitPost);
+				} else {
+					showLoading();
+					showThread(boardSlug, opId, highlitPost);
+				}
+			} else {
+				showBadLink();
+			}
+		} else {
+			showBadLink();
+		}
+	} else {
+		showHome();
+	}
+};
+
+window.onload = function() {
+	handleHash();
+};
+
+window.onhashchange = function(event) {
+	let oldURL = event.oldURL;
+	let index = oldURL.indexOf("#");
+	let oldHash = "";
+	if (index !== -1) {
+		oldHash = oldURL.slice(1+index);
+	}
+	handleHash(oldHash);
+};
+
+</script>
+</body>
+</html>

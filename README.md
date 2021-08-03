@@ -6,7 +6,7 @@
 * Private - Each board has a secret link, and only people with the link can read or write posts. (This is enforced by end-to-end encryption.)
 * Temporary - The board is deleted after a certain time.
 
-Tempchan can help a group or community have more free-flowing discussions than would be possible without these three features. Create a Tempchan board and share its link with others to start the conversation!
+Tempchan can help a group or community have more free-flowing discussions than would be possible without these three features. Create a Tempchan board and share its link to start the conversation!
 
 
 ## Contributing

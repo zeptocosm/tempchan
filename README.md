@@ -20,7 +20,7 @@ If you like this project, I encourage you to contribute. You can help by:
 
 ## Technical
 
-Tempchan is written as a single-page application (HTML+CSS+JS) supported by a serverless NodeJS backend that connects to a MySQL database. The main page (`index.html`) and the assets under `static/` are served statically; each `.js` file under `api/` supports one API endpoint. For example, an HTTP request to `/api/create_post` is handled by `create_post.js`.
+Tempchan is written as a single-page application (HTML+CSS+JS) supported by a serverless NodeJS backend that connects to a MySQL database. The main page (`src/index.html`) and the assets under `src/static/` are served statically; each `.js` file under `src/api/` supports one API endpoint. For example, an HTTP request to `/api/create_post` is handled by `create_post.js`.
 
 It's probably not hard to deploy this code as a traditional (non-serverless) backend, by adding a module that routes requests to the various `.js` handlers. If you can get this working, I'd welcome a pull request to add this capability.
 

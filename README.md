@@ -2,9 +2,9 @@
 
 [Tempchan](https://tempchan.com) is a tool for making throwaway discussion boards, which are:
 
-* Anonymous - No account is required.
-* Private - Each board has a secret link, and only people with the link can read or write posts. (This is enforced by end-to-end encryption.)
-* Temporary - The board is deleted after a certain time.
+* **Anonymous** - No account is required.
+* **Private** - Each board has a secret link, and only people with the link can read or write posts. (This is enforced by end-to-end encryption.)
+* **Temporary** - The board is deleted after a certain time.
 
 Tempchan can help a group or community have more free-flowing discussions than would be possible without these three features. Create a Tempchan board and share its link to start the conversation!
 
@@ -13,9 +13,9 @@ Tempchan can help a group or community have more free-flowing discussions than w
 
 If you like this project, I encourage you to contribute. You can help by:
 
-* Experimenting with Tempchan - Create your own boards and share them with people you want to invite. Poke around with it and find bugs or come up with feature ideas. You can give feedback either [here on Github](https://github.com/zeptocosm/tempchan/issues) or on the [Tempchan Meta board](http://tempchan.com/#Qm7kWF6cvCKwuckvcaSsKTzHq) (note that this link may be changed or removed in the future).
-* Deploying your own instance - The more Tempchan instances there are, the more options people will have to create their own boards, without having to rely on any one instance. I would also like to make the code as platform-independent as possible.
-* Opening pull requests - The issue tracker lists features that I'd like to add eventually but don't have time to work on right now, so if you want to write your own implementation I'd be glad to merge it in.
+* **Experimenting with Tempchan** - Create your own boards and share them with people you want to invite. Poke around with it and find bugs or come up with feature ideas. You can give feedback either [here on Github](https://github.com/zeptocosm/tempchan/issues) or on the [Tempchan Meta board](http://tempchan.com/#Qm7kWF6cvCKwuckvcaSsKTzHq) (note that this link may be changed or removed in the future).
+* **Deploying your own instance** - The more Tempchan instances there are, the more options people will have to create their own boards, without having to rely on any one instance. I would also like to make the code as platform-independent as possible.
+* **Opening pull requests** - The issue tracker lists features that I'd like to add eventually but don't have time to work on right now, so if you want to write your own implementation I'd be glad to merge it in.
 
 
 ## Technical

@@ -41,4 +41,9 @@ The backend uses [serverless-mysql](https://www.npmjs.com/package/serverless-mys
 
 ## License
 
-I haven't decided which open-source license to use yet, but I intend to add one soon. This software incorporates a copy of SJCL, which is licensed according to its LICENSE.txt file.
+I haven't decided which open-source license to use yet, but I intend to add one soon. Until then, the following terms apply:
+
+* Anyone who wants to run this code (modified or not) may do so.
+* If you contribute code you agree that it may be used in the same way, and that it will be covered by whatever license I end up choosing.
+
+This software incorporates a copy of SJCL, which is licensed according to its LICENSE.txt file.

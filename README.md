@@ -33,6 +33,8 @@ process.env.USERNAME
 process.env.PASSWORD
 ```
 
+You must also set `process.env.CA_PATH` if the path to the certificate authority on your system differs from the default provided. If the default doesn't work, see [here](https://docs.planetscale.com/reference/secure-connections#ca-root-configuration) for a list of possibilities to try.
+
 The database must be initialized as described in `schema.sql`.
 
 There is also a cronjob defined in `.github/workflows/cron.yaml` that pings the `/api/cleanup` endpoint daily. If you run your own instance, make sure that this or a similar cronjob (with the URL appropriately changed) is set up.

@@ -1,9 +1,11 @@
+const fs = require("fs");
 const mysql = require("serverless-mysql")({
 	config: {
 		host     : process.env.ENDPOINT,
 		database : process.env.DATABASE,
 		user     : process.env.USERNAME,
-		password : process.env.PASSWORD
+		password : process.env.PASSWORD,
+		ssl : { ca : fs.readFileSync(process.env.CA_PATH || "/etc/pki/tls/certs/ca-bundle.crt") }
 	}
 });
 

@@ -101,13 +101,13 @@ h1, #homePage>p, #myBoardsDiv, #myBoardsDiv *, #loadingPage *, #badLinkPage * {
 <tr>
 	<th>Title</th>
 	<td><input type="text" placeholder="Untitled" id="newBoardTitle"/></td>
-	<td>(max 30 characters)</td>
+	<td>(max 100 characters)</td>
 	<td class="error" id="titleError"></td>
 </tr>
 <tr>
 	<th>Description</th>
 	<td><textarea cols="30" rows="4" placeholder="(optional)" id="newBoardDescription"></textarea></td>
-	<td>(max 300 characters)</td>
+	<td>(max 1000 characters)</td>
 	<td class="error" id="descriptionError"></td>
 </tr>
 <tr>
@@ -147,7 +147,11 @@ h1, #homePage>p, #myBoardsDiv, #myBoardsDiv *, #loadingPage *, #badLinkPage * {
 
 <hr/>
 
+<div id="paginationTop" class="pagination"></div>
+
 <div id="threadsView"></div>
+
+<div id="paginationBottom" class="pagination"></div>
 
 </div> <!-- boardPage -->
 
@@ -309,11 +313,11 @@ const createBoard = function() {
 
 	clearErrors();
 	let anyErrors = false;
-	if (title.length > 30) {
+	if (title.length > 100) {
 		document.getElementById("titleError").innerText = "Too long (" + title.length + " characters)";
 		anyErrors = true;
 	}
-	if (description.length > 300) {
+	if (description.length > 1000) {
 		document.getElementById("descriptionError").innerText = "Too long (" + description.length + " characters)";
 		anyErrors = true;
 	}
@@ -536,8 +540,9 @@ const showBoard = function(boardSlug, pageNum) {
 	let secretKey = boardSlug.substring(0, boardSlug.length-BOARD_CODE_LENGTH);
 	let boardCode = boardSlug.substring(boardSlug.length-BOARD_CODE_LENGTH);
 
-	// todo: send pageNum
-	httpGet("/api/get_board?board_code=" + encodeURIComponent(boardCode), function(response) {
+	httpGet("/api/get_board?board_code=" +
+			encodeURIComponent(boardCode) +
+			(pageNum>1 ? "&page=" + pageNum : ""), function(response) {
 		if (!response.ok) {
 			if (response.status === 404) {
 				showBadLink();
@@ -549,6 +554,7 @@ const showBoard = function(boardSlug, pageNum) {
 		let resObj = JSON.parse(response.responseText);
 		let boardObj = resObj.board;
 		let threads = resObj.threads;
+		let pageCount = resObj.page_count;
 
 		// Board info:
 		let titleCt = boardObj.title_ct;
@@ -564,6 +570,24 @@ const showBoard = function(boardSlug, pageNum) {
 		document.getElementById("boardDescription").innerHTML = renderText(description);
 		document.getElementById("deletionCountdown").innerText = formatDuration(expirationDateMs - new Date());
 		document.getElementById("deletionCountdown").title = formatTimestamp(expirationDateMs);
+
+		let pagination = "";
+		if (pageCount > 1) {
+			pagination += "Page:";
+			for (let i=1; i<=pageCount; i++) {
+				if (i === pageNum) {
+					pagination += ' <b>' + i + '</b>';
+				} else {
+					let pageLink = "/#" + boardSlug;
+					if (i > 1) {
+						pageLink += "/" + i;
+					}
+					pagination += ' <a href="' + pageLink + '">' + i + '</a>';
+				}
+			}
+		}
+		document.getElementById("paginationTop").innerHTML = pagination;
+		document.getElementById("paginationBottom").innerHTML = pagination;
 
 		// Thread listing:
 		let threadsHtml = "";

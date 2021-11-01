@@ -9,6 +9,8 @@ const mysql = require("serverless-mysql")({
 	}
 });
 
+const PAGE_SIZE = 10;
+
 module.exports = async function(req, res) {
 	let boardCode = req.query.board_code;
 	let boards = await mysql.query(
@@ -21,11 +23,22 @@ module.exports = async function(req, res) {
 		return;
 	}
 	
+	// Find the number of threads, so we know how many pages there are.
+	let threadCount = await mysql.query(
+		`SELECT COUNT(1) FROM posts
+		WHERE board_code=? AND parent_post_id=0`,
+		[boardCode]
+	);
+	console.log("Thread count:", threadCount);
+	let pageCount = Math.ceil(threadCount[0]["COUNT(1)"] / PAGE_SIZE);
+	
 	// Sort the threads in descending chronological bump order
 	// (i.e. according to the timestamp of the last reply).
+	let pageNum = req.query.page || 1;
+	let offset = (pageNum-1) * PAGE_SIZE;
 	let postsOnBoard = await mysql.query(
 		`SELECT
-			op.*,
+			op.board_code, op.post_id, op.timestamp_ms, op.text_ct, op.parent_post_id,
 			(
 				SELECT MAX(timestamp_ms) FROM posts AS reply
 				WHERE reply.board_code=? AND (
@@ -40,16 +53,16 @@ module.exports = async function(req, res) {
 			) AS replies_count
 			FROM posts AS op
 		 WHERE op.board_code=? AND op.parent_post_id=0
-		 ORDER BY bump_timestamp_ms DESC`,
-		[boardCode, boardCode, boardCode]
+		 ORDER BY bump_timestamp_ms DESC LIMIT ? OFFSET ?`,
+		[boardCode, boardCode, boardCode, PAGE_SIZE, offset]
 	);
-	console.log("Thread lookup:", postsOnBoard);
+	// console.log("Thread lookup:", postsOnBoard);
 	
 	let threads = [];
 	for (let i=0; i<postsOnBoard.length; i++) {
 		let op = postsOnBoard[i];
 		let replies = await mysql.query(
-			`SELECT * FROM posts
+			`SELECT board_code, post_id, timestamp_ms, text_ct, parent_post_id FROM posts
 			 WHERE board_code=? AND parent_post_id=?
 			 ORDER BY timestamp_ms DESC LIMIT 2`,
 			[boardCode, op.post_id]
@@ -63,7 +76,8 @@ module.exports = async function(req, res) {
 
 	let result = {
 		board: boards[0],
-		threads: threads
+		threads: threads,
+		page_count: pageCount
 	};
 
 	res.send(JSON.stringify(result));

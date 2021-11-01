@@ -24,7 +24,7 @@ module.exports = async function(req, res) {
 	}
 	
 	let posts = await mysql.query(
-		`SELECT * FROM posts
+		`SELECT board_code, post_id, timestamp_ms, text_ct, parent_post_id FROM posts
 		 WHERE board_code=? AND (post_id=? OR parent_post_id=?)
 		 ORDER BY timestamp_ms ASC`,
 		[boardCode, opId, opId]

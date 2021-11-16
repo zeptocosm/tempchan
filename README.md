@@ -48,4 +48,4 @@ I haven't decided which open-source license to use yet, but I intend to add one 
 * Anyone who wants to run this code (modified or not) may do so.
 * If you contribute code you agree that it may be used in the same way, and that it will be covered by whatever license I end up choosing.
 
-This software incorporates a copy of SJCL, which is licensed according to its LICENSE.txt file.
+This software incorporates a copy of [SJCL](https://github.com/bitwiseshiftleft/sjcl) and of [QRJS2](https://github.com/englishextra/qrjs2), each of which are licensed according to their respective LICENSE.txt files.

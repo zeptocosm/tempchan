@@ -4,13 +4,14 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title id="htmlTitle">Tempchan : throwaway discussion boards</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌸</text></svg>"/>
 <style>
 body {
 	background-color: #eee;
 	font-family: Tahoma, Helvetica, sans-serif;
 }
 
-h1, #homePage>p, #myBoardsDiv, #myBoardsDiv *, #loadingPage *, #badLinkPage * {
+h1, #homePage>p, #myBoardsDiv, #myBoardsDiv *, #loadingPage *, #badLinkPage *, #incompleteLinkPage * {
 	text-align: center;
 }
 
@@ -38,9 +39,10 @@ div.formValue:last-child {
 	color: red;
 }
 
-#boardPage, #threadPage {
+#boardPage, #threadPage, #badLinkPage, #incompleteLinkPage {
 	margin-left: 2%;
 	margin-right: 2%;
+	max-width: 960px;
 }
 
 .thread {
@@ -87,6 +89,36 @@ div.formValue:last-child {
 	margin-right: 10px;
 }
 
+#qrModalOuter {
+	background-color: rgb(0,0,0);
+	background-color: rgba(0,0,0,0.5);
+	width: 100%;
+	height: 100%;
+	position: fixed;
+	z-index: 1;
+	left: 0;
+	top: 0;
+}
+#qrModalInner {
+	background-color: white;
+	width: 200px;
+	height: 200px;
+	border: 4px solid black;
+	margin-left: auto;
+	margin-right: auto;
+	position: relative;
+	top: 150px;
+}
+#qrCode {
+	position: relative;
+	top: 16px;
+}
+#qrCode table {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+
 </style>
 </head>
 <body>
@@ -99,10 +131,15 @@ div.formValue:last-child {
 	<p><a href="/">Back to home</a></p>
 </div>
 
+<div id="incompleteLinkPage" class="hidden">
+	<h2>Incomplete link!</h2>
+	<p>You've come here from an RSS feed for a board whose secret link is not in your history; therefore the board cannot be decrypted. Visit the board at its complete link (with <code>#</code> followed by 25 characters), and then reload this page.
+	<p><a href="/">Back to home</a></p>
+</div>
 
 <div id="homePage">
 
-<h1>Tempchan</h1>
+<h1>🌸 Tempchan</h1>
 
 <p><b>Tempchan</b> is a way of making anonymous, private, temporary discussion boards.</p>
 
@@ -159,7 +196,7 @@ div.formValue:last-child {
 
 <h1><a href="">Tempchan</a> | <span id="boardTitle"></span></h1>
 
-<h3 style="text-align: center">Time till deletion: <span id="deletionCountdown"></span></h3>
+<h3 style="text-align: center">Time till deletion: <span id="boardDeletionCountdown"></span><br/><a href="javascript:showQR()">QR</a> &middot; <a id="rssLink" href="" target="_blank" rel="noopener noreferrer">RSS</a></h3>
 
 <div id="boardDescription"></div>
 
@@ -181,6 +218,8 @@ div.formValue:last-child {
 
 <h1><a href="">Tempchan</a> | <a href="" id="threadBoardTitle">(board title)</a> | #<span id="threadHeader"></span></h1>
 
+<h3 style="text-align: center">Time till deletion: <span id="threadDeletionCountdown"></span></h3>
+
 <div id="fullThread"></div>
 
 <textarea id="replyText" cols="60" rows="5"></textarea>
@@ -189,9 +228,18 @@ div.formValue:last-child {
 
 </div> <!-- threadPage -->
 
+<div id="qrModalOuter" class="hidden" onclick="hideQR()">
+	<div id="qrModalInner" onclick="event.stopPropagation()">
+		<div id="qrCode"></div>
+	</div>
+</div>
 
 <!-- https://github.com/bitwiseshiftleft/sjcl/releases/tag/1.0.8 -->
 <script src="static/sjcl/sjcl.js"></script>
+
+<!-- https://github.com/englishextra/qrjs2/blob/e99eb11808ea83ab35ac2b9a291923c0b0084c18/js/qrjs2.min.js -->
+<!-- The last line of the original (i.e. the source map reference) is removed. -->
+<script src="static/qrjs2/qrjs2.min.js"></script>
 
 <script>
 const httpPost = function(url, data, cb) {
@@ -493,9 +541,18 @@ const clearErrors = function() {
 	document.getElementById("lifespanError").innerText = "";
 }
 
-const PAGES = ["loadingPage", "badLinkPage", "homePage", "boardPage", "threadPage"];
+const PAGES = [
+	"loadingPage",
+	"badLinkPage",
+	"incompleteLinkPage",
+	"homePage",
+	"boardPage",
+	"threadPage"
+];
 
 const hideAllBut = function(pageToShow) {
+	hideQR();
+	stopCountdown();
 	for (let i=0; i<PAGES.length; i++) {
 		let page = PAGES[i];
 		let element = document.getElementById(page);
@@ -538,6 +595,7 @@ const MS_PER_HOUR = 1000*60*60;
 const MS_PER_MINUTE = 1000*60;
 const MS_PER_SECOND = 1000;
 const formatDuration = function(durationMs) {
+	durationMs = Math.max(durationMs, 0);
 	let days = Math.floor(durationMs / MS_PER_DAY);
 	durationMs -= days*MS_PER_DAY;
 	let hours = Math.floor(durationMs / MS_PER_HOUR);
@@ -546,9 +604,8 @@ const formatDuration = function(durationMs) {
 	durationMs -= minutes*MS_PER_MINUTE;
 	let seconds = Math.floor(durationMs / MS_PER_SECOND);
 	if (days === 0 && hours === 0 && minutes < 10) {
-		return ""
-			+ (minutes ? minutes + " minute" + (minutes === 1 ? "" : "s") + " " : "")
-			+ (seconds ? seconds + " second" + (seconds === 1 ? "" : "s") : "");
+		// When <10min, pad it out so it doesn't change size during the countdown
+		return minutes + " minutes " + (seconds>=10 ? seconds : "0"+seconds) + " seconds" 
 	} else {
 		return ""
 			+ (days ? days + " day" + (days === 1 ? "" : "s") + " " : "")
@@ -556,6 +613,27 @@ const formatDuration = function(durationMs) {
 			+ (minutes ? minutes + " minute" + (minutes === 1 ? "" : "s") : "");
 	}
 };
+
+let countdownInterval = void(0);
+
+const startCountdown = function(element, countdownToMs) {
+	if ("undefined" !== typeof(countdownInterval)) {
+		clearInterval(countdownInterval);
+	}
+	countdownInterval = setInterval(function(){
+		let duration = countdownToMs - new Date();
+		element.innerText = formatDuration(duration);
+		if (duration <= 0) {
+			stopCountdown();
+		}
+	}, 1000);
+}
+
+const stopCountdown = function() {
+	if ("undefined" !== typeof(countdownInterval)) {
+		countdownInterval = clearInterval(countdownInterval);
+	}
+}
 
 const showBoard = function(boardSlug, pageNum) {
 	let secretKey = boardSlug.substring(0, boardSlug.length-BOARD_CODE_LENGTH);
@@ -589,8 +667,7 @@ const showBoard = function(boardSlug, pageNum) {
 		document.getElementById("htmlTitle").innerText = title + " : Tempchan";
 		document.getElementById("boardTitle").innerText = title;
 		document.getElementById("boardDescription").innerHTML = renderText(description);
-		document.getElementById("deletionCountdown").innerText = formatDuration(expirationDateMs - new Date());
-		document.getElementById("deletionCountdown").title = formatTimestamp(expirationDateMs);
+		document.getElementById("rssLink").href = "/api/rss?board=" + boardCode;
 
 		let pagination = "";
 		if (pageCount > 1) {
@@ -648,10 +725,29 @@ const showBoard = function(boardSlug, pageNum) {
 		}
 		document.getElementById("threadsView").innerHTML = threadsHtml;
 
+
+		let timeTillDeletionMs = expirationDateMs - new Date();
+		document.getElementById("boardDeletionCountdown").innerText = formatDuration(timeTillDeletionMs);
+		document.getElementById("boardDeletionCountdown").title = formatTimestamp(expirationDateMs);
+
 		clearForms();
 		hideAllBut("boardPage");
+		if (timeTillDeletionMs < 10*MS_PER_MINUTE) {
+			startCountdown(document.getElementById("boardDeletionCountdown"), expirationDateMs);
+		}
 	});
-}
+};
+
+const showQR = function() {
+	let qrTable = QRCode.generateHTML(window.location.href);
+	document.getElementById("qrCode").appendChild(qrTable);
+	document.getElementById("qrModalOuter").classList.remove("hidden");
+};
+
+const hideQR = function() {
+	document.getElementById("qrCode").innerHTML = "";
+	document.getElementById("qrModalOuter").classList.add("hidden");
+};
 
 const POST_ON_THREAD_TEMPLATE = `
 <div class="post{{highlightStyle}}" id="post{{postId}}">
@@ -680,7 +776,8 @@ const showThread = function(boardSlug, opId, highlitPost) {
 		}
 		let board = res.board;
 		let boardTitle = decrypt(secretKey, board.title_ct);
-		addMyBoard(boardSlug, boardTitle, board.expiration_date_ms);
+		let expirationDateMs = board.expiration_date_ms;
+		addMyBoard(boardSlug, boardTitle, expirationDateMs);
 
 		document.getElementById("htmlTitle").innerText =
 			boardTitle + " | #" + opId + " : Tempchan";
@@ -760,8 +857,16 @@ const showThread = function(boardSlug, opId, highlitPost) {
 		document.getElementById("threadBoardTitle").innerText = boardTitle;
 		document.getElementById("threadBoardTitle").href = "/#" + boardSlug;
 		document.getElementById("threadHeader").innerText = opId;
+
+		let timeTillDeletionMs = expirationDateMs - new Date();
+		document.getElementById("threadDeletionCountdown").innerText = formatDuration(timeTillDeletionMs);
+		document.getElementById("threadDeletionCountdown").title = formatTimestamp(expirationDateMs);
 		clearForms();
 		hideAllBut("threadPage");
+		if (timeTillDeletionMs < 10*MS_PER_MINUTE) {
+			startCountdown(document.getElementById("threadDeletionCountdown"), expirationDateMs);
+		}
+
 		if (highlitPost) {
 			document.getElementById("post" + parseInt(highlitPost)).scrollIntoView();
 		}
@@ -803,6 +908,11 @@ const rescrollThread = function(boardSlug, opId, highlitPost) {
 const showBadLink = function() {
 	document.getElementById("htmlTitle").innerText = "Tempchan : not found";
 	hideAllBut("badLinkPage");
+}
+
+const showIncompleteLink = function() {
+	document.getElementById("htmlTitle").innerText = "Tempchan : incomplete link";
+	hideAllBut("incompleteLinkPage");
 }
 
 const showStatic = function(staticPage) {
@@ -855,6 +965,17 @@ const newThread = function() {
 	});
 }
 
+const findBoardSlug = function(boardCode) {
+	let myBoards = JSON.parse(window.localStorage.getItem(MY_BOARDS_LS_KEY) || "[]");
+	for (let i=0; i<myBoards.length; i++) {
+		let entry = myBoards[i];
+		if (entry.boardSlug.endsWith(boardCode)) {
+			return entry.boardSlug;
+		}
+	}
+	return false;
+};
+
 
 const handleHash = function(oldHash) {
 	if (window.location.hash) {
@@ -864,6 +985,16 @@ const handleHash = function(oldHash) {
 			// e.g. "#/about"
 			// showStatic(splitHash[1]); // todo
 			showBadLink();
+		} else if (splitHash[0].length === BOARD_CODE_LENGTH) {
+			let boardSlugFromHistory = findBoardSlug(splitHash[0]);
+			if (boardSlugFromHistory) {
+				// Redirect:
+				splitHash[0] = boardSlugFromHistory;
+				let redirectToHash = splitHash.join("/");
+				window.location.hash = redirectToHash;
+			} else {
+				showIncompleteLink();
+			}
 		} else if (splitHash[0].length === SECRET_KEY_LENGTH + BOARD_CODE_LENGTH) {
 			let boardSlug = splitHash[0];
 			if (splitHash.length === 1) {

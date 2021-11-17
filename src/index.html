@@ -111,7 +111,8 @@ div.formValue:last-child {
 }
 #qrCode {
 	position: relative;
-	top: 16px;
+	top: 26px;
+	transform-origin: top center;
 }
 #qrCode table {
 	margin-left: auto;
@@ -738,9 +739,17 @@ const showBoard = function(boardSlug, pageNum) {
 	});
 };
 
+const QR_DESIRED_SIZE = 145;
+const QR_CELL_SIZE = 5;
 const showQR = function() {
 	let qrTable = QRCode.generateHTML(window.location.href);
-	document.getElementById("qrCode").appendChild(qrTable);
+	let actualSize = qrTable.getElementsByTagName("tr").length * QR_CELL_SIZE;
+	let qrDiv = document.getElementById("qrCode");
+	qrDiv.appendChild(qrTable);
+	if (actualSize !== QR_DESIRED_SIZE) {
+		let scale = QR_DESIRED_SIZE/actualSize;
+		qrDiv.style.setProperty("transform", "scale(" + scale + ")");
+	}
 	document.getElementById("qrModalOuter").classList.remove("hidden");
 };
 

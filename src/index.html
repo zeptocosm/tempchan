@@ -9,6 +9,15 @@
 body {
 	background-color: #eee;
 	font-family: Tahoma, Helvetica, sans-serif;
+}	
+@keyframes fadeout {
+	from {opacity: 1}
+	to {opacity: 0}
+}
+body.fadeout {
+	animation-name: fadeout;
+	animation-duration: 20s;
+	opacity: 0;
 }
 
 h1, #homePage>p, #myBoardsDiv, #myBoardsDiv *, #loadingPage *, #badLinkPage *, #incompleteLinkPage * {
@@ -19,7 +28,7 @@ h1, #homePage>p, #myBoardsDiv, #myBoardsDiv *, #loadingPage *, #badLinkPage *, #
 	max-width: min(100%, 720px);
 	padding: 10px;
 	padding-top: 0;
-	border: 4px solid black;
+	border: 5px solid black;
 	background-color: white;
 	margin-left: auto;
 	margin-right: auto;
@@ -103,7 +112,7 @@ div.formValue:last-child {
 	background-color: white;
 	width: 200px;
 	height: 200px;
-	border: 4px solid black;
+	border: 5px solid black;
 	margin-left: auto;
 	margin-right: auto;
 	position: relative;
@@ -142,7 +151,7 @@ div.formValue:last-child {
 
 <h1>🌸 Tempchan</h1>
 
-<p><b>Tempchan</b> is a way of making anonymous, private, temporary discussion boards.</p>
+<p><b>Tempchan</b> is a way of making anonymous, private, temporary discussion boards. <a href="/about.html">Learn more</a></p>
 
 <p class="error" id="noscriptWarning">Tempchan requires JavaScript to run, in order to encrypt and decrypt messages in your web browser.</p>
 <script>document.getElementById("noscriptWarning").style = "display:none";</script>
@@ -188,7 +197,7 @@ div.formValue:last-child {
 </div>
 
 <hr/>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/zeptocosm/tempchan">Source code</a></p>
+<p><a href="https://github.com/zeptocosm/tempchan" rel="noopener noreferrer" target="_blank">Source code</a> | Released under <a href="https://github.com/zeptocosm/tempchan/blob/main/LICENSE.txt" rel="noopener noreferrer" target="_blank">AGPLv3</a></p>
 
 </div><!-- homePage -->
 
@@ -197,7 +206,7 @@ div.formValue:last-child {
 
 <h1><a href="">Tempchan</a> | <span id="boardTitle"></span></h1>
 
-<h3 style="text-align: center">Time till deletion: <span id="boardDeletionCountdown"></span><br/><a href="javascript:showQR()">QR</a> &middot; <a id="rssLink" href="" target="_blank" rel="noopener noreferrer">RSS</a></h3>
+<h3 style="text-align: center">Time till deletion: <span id="boardDeletionCountdown"></span><br/><a href="" onclick="showQR(); return false">QR</a> &middot; <a id="rssLink" href="" target="_blank" rel="noopener noreferrer">RSS</a></h3>
 
 <div id="boardDescription"></div>
 
@@ -625,6 +634,7 @@ const startCountdown = function(element, countdownToMs) {
 		let duration = countdownToMs - new Date();
 		element.innerText = formatDuration(duration);
 		if (duration <= 0) {
+			document.body.classList.add("fadeout");
 			stopCountdown();
 		}
 	}, 1000);
@@ -760,7 +770,7 @@ const hideQR = function() {
 
 const POST_ON_THREAD_TEMPLATE = `
 <div class="post{{highlightStyle}}" id="post{{postId}}">
-<b>Anonymous</b> <a href="/#{{boardSlug}}/t/{{opId}}#{{postId}}">#{{postId}}</a> <a href="javascript:mention({{postId}})" title="Mention this post">&lt;&lt;</a> {{timestamp}} {{backmentions}}
+<b>Anonymous</b> <a href="/#{{boardSlug}}/t/{{opId}}#{{postId}}">#{{postId}}</a> <a href="" onclick="mention({{postId}}); return false" title="Mention this post">&lt;&lt;</a> {{timestamp}} {{backmentions}}
 {{renderedText}}
 </div>`;
 

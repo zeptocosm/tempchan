@@ -24,7 +24,7 @@ const FEED_TEMPLATE =
 <channel>
 
 <title>Tempchan: {{boardCode}}</title>
-<description>Encrypted feed for Tempchan board "{{boardCode}}". To see the real content, visit the board in your web browser.</description>
+<description>Encrypted feed for Tempchan board "{{boardCode}}". (To see the real content, visit the board in your web browser.) This board will expire on {{expirationDate}}.</description>
 <link>https://{{siteUrl}}/#{{boardCode}}</link>
 <lastBuildDate>{{updatedDate}}</lastBuildDate>
 <pubDate>{{updatedDate}}</pubDate>
@@ -174,9 +174,11 @@ module.exports = async function(req, res) {
 	}
 
 	let updatedDate = formatDate(recentPosts.length ? recentPosts[0].timestamp_ms : now);
+	let expirationDate = formatDate(boards[0].expiration_date_ms);
 	let feedXml = FEED_TEMPLATE
 		.replaceAll("{{boardCode}}", boardCode)
 		.replaceAll("{{siteUrl}}", siteUrl)
+		.replaceAll("{{expirationDate}}", expirationDate)
 		.replaceAll("{{updatedDate}}", updatedDate)
 		.replaceAll("{{feedItems}}", feedItemsXml);
 

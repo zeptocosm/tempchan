@@ -31,10 +31,16 @@ module.exports = async function(req, res) {
 	);
 	console.log("Thread count:", threadCount);
 	let pageCount = Math.ceil(threadCount[0]["COUNT(1)"] / PAGE_SIZE);
-	
+	let pageNum = req.query.page || 1;
+
+	if (pageNum > pageCount) {
+		res.status(404).send("Page does not exist");
+		mysql.end()
+		return;
+	}
+
 	// Sort the threads in descending chronological bump order
 	// (i.e. according to the timestamp of the last reply).
-	let pageNum = req.query.page || 1;
 	let offset = (pageNum-1) * PAGE_SIZE;
 	let postsOnBoard = await mysql.query(
 		`SELECT
@@ -56,7 +62,6 @@ module.exports = async function(req, res) {
 		 ORDER BY bump_timestamp_ms DESC LIMIT ? OFFSET ?`,
 		[boardCode, boardCode, boardCode, PAGE_SIZE, offset]
 	);
-	// console.log("Thread lookup:", postsOnBoard);
 	
 	let threads = [];
 	for (let i=0; i<postsOnBoard.length; i++) {

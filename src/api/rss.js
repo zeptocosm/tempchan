@@ -36,8 +36,8 @@ const FEED_ITEM_TEMPLATE =
 `<item>
 <title>{{itemTitle}}</title>
 <description>{{itemDescription}}</description>
-<link>https://{{siteUrl}}/#{{boardCode}}/t/{{itemLink}}</link>
-<guid>https://{{siteUrl}}/#{{boardCode}}/t/{{itemLink}}</guid>
+<link>https://{{siteUrl}}/#{{boardCode}}/{{itemLink}}</link>
+<guid>https://{{siteUrl}}/#{{boardCode}}/{{itemLink}}</guid>
 <pubDate>{{itemDate}}</pubDate>
 </item>`;
 

@@ -13,7 +13,7 @@ Tempchan can help a group or community have more free-flowing discussions than w
 
 If you like this project, I encourage you to contribute. You can help by:
 
-* **Experimenting with Tempchan** - Create your own boards and share them with people you want to invite. Poke around with it and find bugs or come up with feature ideas. You can give feedback either [here on Github](https://github.com/zeptocosm/tempchan/issues) or on the [Tempchan Meta board](https://tempchan.com/#yY8UYL2SKPErCQ8rweDkAicMC) (note that this link may be changed or removed in the future).
+* **Experimenting with Tempchan** - Create your own boards and share them with people you want to invite. Poke around with it and find bugs or come up with feature ideas. You can give feedback either [here on Github](https://github.com/zeptocosm/tempchan/issues) or on the [Tempchan Meta board](https://tempchan.com/#aRqEd2RYrbB9mibNDwQhbzNFD) (note that this link may be changed or removed in the future).
 * **Deploying your own instance** - The more Tempchan instances there are, the more options people will have to create their own boards, without having to rely on any one instance. I would also like to make the code as platform-independent as possible.
 * **Opening pull requests** - The issue tracker lists features that I'd like to add eventually but don't have time to work on right now, so if you want to write your own implementation I'd be glad to merge it in.
 
@@ -43,9 +43,6 @@ The backend uses [serverless-mysql](https://www.npmjs.com/package/serverless-mys
 
 ## License
 
-I haven't decided which open-source license to use yet, but I intend to add one soon. Until then, the following terms apply:
+Tempchan is licensed under the GNU Affero General Public License 3.0.
 
-* Anyone who wants to run this code (modified or not) may do so.
-* If you contribute code you agree that it may be used in the same way, and that it will be covered by whatever license I end up choosing.
-
-This software incorporates a copy of [SJCL](https://github.com/bitwiseshiftleft/sjcl) and of [QRJS2](https://github.com/englishextra/qrjs2), each of which are licensed according to their respective LICENSE.txt files.
+Tempchan incorporates a copy of [SJCL](https://github.com/bitwiseshiftleft/sjcl) and of [QRJS2](https://github.com/englishextra/qrjs2), each of which are licensed according to their respective LICENSE.txt files.

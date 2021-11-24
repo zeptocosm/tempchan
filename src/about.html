@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>About Tempchan : throwaway discussion boards</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌸</text></svg>"/>
+<style>
+body {
+	background-color: #eee;
+	font-family: Tahoma, Helvetica, sans-serif;
+}
+h1 {
+	text-align: center;
+}
+#main {
+	margin-left: 2%;
+	margin-right: 2%;
+	max-width: 960px;
+	text-align: justify;
+}
+.greentext {
+	color: #090;
+}
+table {
+	border: 1px solid black;
+}
+td {
+	padding-left: 5px;
+	padding-right: 5px;
+}
+td:first-child {
+	border-right: 1px solid black;
+}
+</style>
+</head>
+<body>
+<div id="main">
+<h1>🌸 <a href="/">Tempchan</a> | About</h1>
+<p>Last updated 2021-11-23.</p>
+
+<ul>
+	<li><a href="#what-is-tempchan">What is Tempchan?</a></li>
+	<li><a href="#how-do-i-use-tempchan">How do I use Tempchan?</a></li>
+	<li><a href="#what-are-some-situations-where-tempchan-is-useful">What are some situations where Tempchan is useful?</a></li>
+	<li><a href="#how-can-i-use-text-formatting-in-my-posts">How can I use text formatting in my posts?</a></li>
+	<li><a href="#how-does-moderation-work">How does moderation work?</a></li>
+	<li><a href="#how-does-the-rss-feed-work">How does the RSS feed work?</a></li>
+	<li><a href="#how-secure-is-tempchan">How secure is Tempchan?</a></li>
+	<li><a href="#is-tempchan-being-actively-worked-on">Is Tempchan being actively worked on?</a></li>
+	<li><a href="#how-can-i-contribute">How can I contribute?</a></li>
+	<li><a href="#is-anyone-making-money-off-of-this">Is anyone making money off of this?</a></li>
+</ul>
+
+<h2><a name="what-is-tempchan">What is Tempchan?</a></h2>
+<p><b><a href="/">Tempchan</a></b> is a tool for making throwaway discussion boards, which are:</p>
+<ul>
+    <li><b>Anonymous</b>: No account is required.</li>
+    <li><b>Private</b>: Each board has a secret link, and only people with the link can read or write posts.</li>
+    <li><b>Temporary</b>: The board is deleted after a certain time.</li>
+</ul>
+
+<h2><a name="how-do-i-use-tempchan">How do I use Tempchan?</a></h2>
+<p>If you are given a link to a Tempchan board, just load it in your browser and start posting. Or, create your own board by going to <a href="/">the homepage</a> and submitting the form&mdash;your board will be created instantly. Either way, no login is needed!</p>
+
+<h2><a name="what-are-some-situations-where-tempchan-is-useful">What are some situations where Tempchan is useful?</a></h2>
+<p>With anonymity, privacy, and temporariness, Tempchan can help you have more open and free-flowing conversations than would otherwise be possible. For example, you can:</p>
+<ul>
+<li>Share a Tempchan link with your friends or with private chat groups.</li>
+<li>Post a link somewhere on the internet (Twitter, Reddit, etc.) where the people you want to talk with are likely to see it.</li>
+<li>Use Tempchan for brainstorming within your company or team.</li>
+<li>Print out a board's link on posters or cards and advertise it within your neighborhood, school, office, etc.</li>
+<li>Create a one-off Tempchan board to stay in touch with someone you just met, without revealing any personal information.</li>
+<li>Anything else you can think of!</li>
+</ul>
+
+<h2><a name="how-can-i-use-text-formatting-in-my-posts">How can I use text formatting in my posts?</a></h2>
+<table border="0" cellspacing="0">
+
+<tr>
+<td><pre>Separate paragraphs with a blank line,
+
+like this.</pre></td>
+<td><p>Separate paragraphs with a blank line,</p>
+<p>like this.</p></td>
+</tr>
+
+<tr>
+<td><pre>Or,
+you can use single line breaks,
+like this.</pre></td>
+<td><p>Or,<br/>
+you can use single line breaks,<br/>
+like this.</p></td>
+</tr>
+
+<tr>
+<td><pre>Link to a post in the same thread like &gt;&gt;1</pre></td>
+<td><p>Link to a post in the same thread like <a href="#1">&gt;&gt;1</a></p></td>
+</tr>
+
+<tr>
+<td><pre>&gt;Lines beginning with &gt; are green text.</pre></td>
+<td><p class="greentext">&gt;Lines beginning with &gt; are green text.</p></td>
+</tr>
+</table>
+
+<h2><a name="how-does-moderation-work">How does moderation work?</a></h2>
+<p>There is no moderation on Tempchan&mdash;there is no way to ban people or delete or edit posts. The creator of a board has no special privileges over the other members. Keep this in mind when deciding whom to entrust with your board link!</p>
+
+<h2><a name="how-does-the-rss-feed-work">How does the RSS feed work?</a></h2>
+<p>To be notified of new posts on a board, you can subscribe with your RSS reader of choice by way of the "RSS" link on the board's homepage. However, because all content is encrypted, the feed will only contain garbled text; in order to read the posts, you must separately load them in your browser. If you follow the links from the feed, you will be able to read the posts as long as the board's secret link is already in your history.</p>
+
+<h2><a name="how-secure-is-tempchan">How secure is Tempchan?</a></h2>
+<p>Tempchan is designed to disclose as little information as possible to the server. All posts, board titles, and board descriptions are encrypted locally using the key contained in the secret link, which means that nobody without that link&mdash;not even the server admins&mdash;can read them. The server only sees the date and time of each post, its approximate length, and how the posts are grouped into threads and boards. The secret links are never known by the server; no cookies or analytics are used.</p>
+
+<h2><a name="is-tempchan-being-actively-worked-on">Is Tempchan being actively worked on?</a></h2>
+<p>Yes! Several features are currently in the pipeline, such as board moderation and read-only links.</p>
+
+<h2><a name="how-can-i-contribute">How can I contribute?</a></h2>
+<p>Tempchan is open-source. You can contribute to the project by opening tickets and pull-requests on <a href="https://github.com/zeptocosm/tempchan" rel="noopener noreferrer" target="_blank">GitHub</a>, or by setting up your own instance. The <a href="https://github.com/zeptocosm/tempchan/blob/main/README.md" rel="noopener noreferrer" target="_blank">README</a> on GitHub also contains a link to a "Tempchan Meta" board where you can leave feedback.</p>
+
+<h2><a name="is-anyone-making-money-off-of-this">Is anyone making money off of this?</a></h2>
+<p>No. Tempchan is offered free of charge and without advertisements, in the hope that it will become a widespread tool for improving the quality of conversations online.</p>
+
+<hr/>
+
+<p style="text-align: center"><a href="https://github.com/zeptocosm/tempchan" rel="noopener noreferrer" target="_blank">Source code</a> | Released under <a href="https://github.com/zeptocosm/tempchan/blob/main/LICENSE.txt" rel="noopener noreferrer" target="_blank">AGPLv3</a></p>
+
+</div>
+</body>
+</html>

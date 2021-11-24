@@ -94,7 +94,10 @@ div.formValue:last-child {
 	display: none;
 }
 
-#myBoardsList a {
+#myBoardsDiv h3 {
+	display: inline;
+}
+#myBoardsDiv h3, #myBoardsList a {
 	margin-right: 10px;
 }
 
@@ -156,10 +159,11 @@ div.formValue:last-child {
 <p class="error" id="noscriptWarning">Tempchan requires JavaScript to run, in order to encrypt and decrypt messages in your web browser.</p>
 <script>document.getElementById("noscriptWarning").style = "display:none";</script>
 
-<div id="myBoardsDiv" class="hidden">
-<h3>My boards</h3>
-<p><span id="myBoardsList"></span><button onclick="clearMyBoards()">Clear</button></p>
-</div>
+<div id="myBoardsDiv" class="hidden"><p>
+<h3>My boards:</h3>
+<span id="myBoardsList"></span>
+<button onclick="clearMyBoards()">Clear</button>
+</p></div>
 
 <div id="creationForm">
 
@@ -204,14 +208,19 @@ div.formValue:last-child {
 
 <div id="boardPage" class="hidden">
 
-<h1><a href="">Tempchan</a> | <span id="boardTitle"></span></h1>
+<h1><a href="#">Tempchan</a> | <span id="boardTitle"></span></h1>
 
 <h3 style="text-align: center">Time till deletion: <span id="boardDeletionCountdown"></span><br/><a href="" onclick="showQR(); return false">QR</a> &middot; <a id="rssLink" href="" target="_blank" rel="noopener noreferrer">RSS</a></h3>
 
 <div id="boardDescription"></div>
 
-<textarea id="newThreadText" cols="60" rows="5"></textarea><br/>
-<button id="newThreadButton" onclick="newThread()">Post new thread</button>
+<table cellspacing="0">
+<tr><td colspan="2"><textarea id="newThreadText" cols="60" rows="5"></textarea></td></tr>
+<tr>
+<td><button id="newThreadButton" onclick="newThread()">Post new thread</button></td>
+<td style="text-align: right"><a href="/about.html#how-can-i-use-text-formatting-in-my-posts" target="_blank">Help</a></td>
+</tr>
+</table>
 
 <hr/>
 
@@ -226,15 +235,19 @@ div.formValue:last-child {
 
 <div id="threadPage" class="hidden">
 
-<h1><a href="">Tempchan</a> | <a href="" id="threadBoardTitle">(board title)</a> | #<span id="threadHeader"></span></h1>
+<h1><a href="#">Tempchan</a> | <a href="" id="threadBoardTitle">(board title)</a> | #<span id="threadHeader"></span></h1>
 
 <h3 style="text-align: center">Time till deletion: <span id="threadDeletionCountdown"></span></h3>
 
 <div id="fullThread"></div>
 
-<textarea id="replyText" cols="60" rows="5"></textarea>
-<br/>
-<button id="postReplyButton" onclick="postReply()">Reply</button>
+<table cellspacing="0">
+<tr><td colspan="2"><textarea id="replyText" cols="60" rows="5"></textarea></td></tr>
+<tr>
+<td><button id="postReplyButton" onclick="postReply()">Reply</button></td>
+<td style="text-align: right"><a href="/about.html#how-can-i-use-text-formatting-in-my-posts" target="_blank">Help</a></td>
+</tr>
+</table>
 
 </div> <!-- threadPage -->
 
@@ -342,9 +355,10 @@ const refreshMyBoards = function() {
 	let divElement = document.getElementById("myBoardsDiv");
 	if (myBoards.length) {
 		let listHtml = "";
+		let now = +new Date();
 		for (let i=0; i<myBoards.length; i++) {
 			let entry = myBoards[i];
-			if (entry.expirationDateMs > +new Date()) {
+			if (entry.expirationDateMs > now) {
 				listHtml += ('<a href="/#' + entry.boardSlug + '">' + entry.title + '</a> ');
 			}
 		}
@@ -446,7 +460,7 @@ const postReply = function() {
 
 	let splitHash = window.location.hash.slice(1).split("/");
 	let boardSlug = splitHash[0];
-	let lastPart = splitHash[2];
+	let lastPart = splitHash[1];
 	let opId = lastPart.split("#")[0];
 
 	let secretKey = boardSlug.substring(0, boardSlug.length-BOARD_CODE_LENGTH);
@@ -584,21 +598,21 @@ const formatTimestamp = function(timestampMs) {
 const THREAD_ON_BOARD_TEMPLATE = 
 `<div class="thread">
 <div class="post">
-<b>Anonymous</b> <a href="/#{{boardSlug}}/t/{{opId}}#{{opId}}">#{{opId}}</a> {{timestamp}}
+<b>Anonymous</b> <a href="/#{{boardSlug}}/{{opId}}#{{opId}}">#{{opId}}</a> {{timestamp}}
 {{renderedText}}
 </div>
 {{lastRepliesHtml}}
-<a href="/#{{boardSlug}}/t/{{opId}}">Reply</a>
+<a href="/#{{boardSlug}}/{{opId}}">Reply</a>
 </div>`;
 
 const POST_PREVIEW_TEMPLATE =
 `<div class="post">
-<b>Anonymous</b> <a href="/#{{boardSlug}}/t/{{opId}}#{{postId}}">#{{postId}}</a> {{timestamp}}
+<b>Anonymous</b> <a href="/#{{boardSlug}}/{{opId}}#{{postId}}">#{{postId}}</a> {{timestamp}}
 {{renderedText}}
 </div>`;
 
 const HIDDEN_REPLIES_TEMPLATE = `
-<p>{{hiddenCount}} repl{{pluralEnding}} hidden; <a href="/#{{boardSlug}}/t/{{opId}}">view all</a></p>`;
+<p>{{hiddenCount}} repl{{pluralEnding}} hidden; <a href="/#{{boardSlug}}/{{opId}}">view all</a></p>`;
 
 const MS_PER_DAY = 1000*60*60*24;
 const MS_PER_HOUR = 1000*60*60;
@@ -689,7 +703,7 @@ const showBoard = function(boardSlug, pageNum) {
 				} else {
 					let pageLink = "/#" + boardSlug;
 					if (i > 1) {
-						pageLink += "/" + i;
+						pageLink += "/p/" + i;
 					}
 					pagination += ' <a href="' + pageLink + '">' + i + '</a>';
 				}
@@ -770,7 +784,7 @@ const hideQR = function() {
 
 const POST_ON_THREAD_TEMPLATE = `
 <div class="post{{highlightStyle}}" id="post{{postId}}">
-<b>Anonymous</b> <a href="/#{{boardSlug}}/t/{{opId}}#{{postId}}">#{{postId}}</a> <a href="" onclick="mention({{postId}}); return false" title="Mention this post">&lt;&lt;</a> {{timestamp}} {{backmentions}}
+<b>Anonymous</b> <a href="/#{{boardSlug}}/{{opId}}#{{postId}}">#{{postId}}</a> <a href="" onclick="mention({{postId}}); return false" title="Mention this post">&lt;&lt;</a> {{timestamp}} {{backmentions}}
 {{renderedText}}
 </div>`;
 
@@ -813,7 +827,7 @@ const showThread = function(boardSlug, opId, highlitPost) {
 		// Second pass: Render the text, and get list of mentions in each post
 		let renderedTexts = [];
 		let mentionsInEachPost = [];
-		let threadHash = boardSlug + "/t/" + opId;
+		let threadHash = boardSlug + "/" + opId;
 		for (let i=0; i<posts.length; i++) {
 			let post = posts[i];
 			let mentionsInPost = [];
@@ -934,10 +948,6 @@ const showIncompleteLink = function() {
 	hideAllBut("incompleteLinkPage");
 }
 
-const showStatic = function(staticPage) {
-	// todo
-}
-
 const showLoading = function() {
 	hideAllBut("loadingPage");
 }
@@ -975,7 +985,7 @@ const newThread = function() {
 		board_code: boardCode
 	}, function(response) {
 		if (response.ok) {
-			let newHash = boardSlug + "/t/" + response.responseText;
+			let newHash = boardSlug + "/" + response.responseText;
 			window.location.hash = newHash;
 		} else {
 			alert("Error creating post! " + JSON.stringify(res));
@@ -1000,17 +1010,13 @@ const handleHash = function(oldHash) {
 	if (window.location.hash) {
 		let newHash = window.location.hash.slice(1);
 		let splitHash = newHash.split("/");
-		if (splitHash[0].length === 0) {
-			// e.g. "#/about"
-			// showStatic(splitHash[1]); // todo
-			showBadLink();
-		} else if (splitHash[0].length === BOARD_CODE_LENGTH) {
+		if (splitHash[0].length === BOARD_CODE_LENGTH) {
 			let boardSlugFromHistory = findBoardSlug(splitHash[0]);
 			if (boardSlugFromHistory) {
 				// Redirect:
 				splitHash[0] = boardSlugFromHistory;
 				let redirectToHash = splitHash.join("/");
-				window.location.hash = redirectToHash;
+				window.location.replace("#"+redirectToHash);
 			} else {
 				showIncompleteLink();
 			}
@@ -1020,15 +1026,7 @@ const handleHash = function(oldHash) {
 				showLoading();
 				showBoard(boardSlug, 1);
 			} else if (splitHash.length === 2) {
-				showLoading();
-				let pageNum = parseInt(splitHash[1]);
-				if (pageNum) {
-					showBoard(boardSlug, pageNum);
-				} else {
-					showBadLink();
-				}
-			} else if (splitHash.length === 3 && splitHash[1] === "t") {
-				let lastPart = splitHash[2];
+				let lastPart = splitHash[1];
 				let opId;
 				let highlitPost = void(0);
 				if (lastPart.indexOf("#") !== -1) {
@@ -1044,11 +1042,24 @@ const handleHash = function(oldHash) {
 				if (oldHashPrefix && (
 					newHash === oldHashPrefix ||
 					newHash.startsWith(oldHashPrefix+"#"))
-					) {
+				) {
 					rescrollThread(boardSlug, opId, highlitPost);
 				} else {
 					showLoading();
 					showThread(boardSlug, opId, highlitPost);
+				}
+			} else if (splitHash.length === 3 && splitHash[1] === "p") {
+				showLoading();
+				let pageNum = parseInt(splitHash[2]);
+				if (pageNum) {
+					if (pageNum === 1) {
+						// Redirect:
+						window.location.replace("#"+boardSlug);
+					} else {
+						showBoard(boardSlug, pageNum);
+					}
+				} else {
+					showBadLink();
 				}
 			} else {
 				showBadLink();

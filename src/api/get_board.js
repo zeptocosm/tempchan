@@ -31,6 +31,9 @@ module.exports = async function(req, res) {
 	);
 	console.log("Thread count:", threadCount);
 	let pageCount = Math.ceil(threadCount[0]["COUNT(1)"] / PAGE_SIZE);
+	if (pageCount === 0) {
+		pageCount = 1;
+	}
 	let pageNum = req.query.page || 1;
 
 	if (pageNum > pageCount) {

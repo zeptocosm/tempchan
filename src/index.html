@@ -86,7 +86,7 @@ div.formValue:last-child {
 	margin-bottom: 15px;
 }
 
-#newThreadText, #replyText, #newBoardDescription {
+#newBoardDescription {
 	max-width: 100%;
 }
 
@@ -99,6 +99,23 @@ div.formValue:last-child {
 }
 #myBoardsDiv h3, #myBoardsList a {
 	margin-right: 10px;
+}
+
+.textareaContainer {
+	display: inline-block;
+	max-width: 100%;
+}
+.textareaContainer textarea {
+	max-width: 98%;
+}
+.textareaContainer > div > div:nth-child(1) {
+	float: left;
+}
+.textareaContainer > div > div:nth-child(2) {
+	float: right;
+}
+.textareaContainer > div > div:nth-child(3) {
+	clear: both;
 }
 
 #qrModalOuter {
@@ -214,13 +231,14 @@ div.formValue:last-child {
 
 <div id="boardDescription"></div>
 
-<table cellspacing="0">
-<tr><td colspan="2"><textarea id="newThreadText" cols="60" rows="5"></textarea></td></tr>
-<tr>
-<td><button id="newThreadButton" onclick="newThread()">Post new thread</button></td>
-<td style="text-align: right"><a href="/about.html#how-can-i-use-text-formatting-in-my-posts" target="_blank">Help</a></td>
-</tr>
-</table>
+<div class="textareaContainer">
+<textarea id="newThreadText" cols="60" rows="5"></textarea>
+<div>
+<div><button id="newThreadButton" onclick="newThread()">Post new thread</button></div>
+<div><a href="/about.html#how-can-i-use-text-formatting-in-my-posts" target="_blank">Help</a></div>
+<div></div>
+</div>
+</div>
 
 <hr/>
 
@@ -241,13 +259,14 @@ div.formValue:last-child {
 
 <div id="fullThread"></div>
 
-<table cellspacing="0">
-<tr><td colspan="2"><textarea id="replyText" cols="60" rows="5"></textarea></td></tr>
-<tr>
-<td><button id="postReplyButton" onclick="postReply()">Reply</button></td>
-<td style="text-align: right"><a href="/about.html#how-can-i-use-text-formatting-in-my-posts" target="_blank">Help</a></td>
-</tr>
-</table>
+<div class="textareaContainer">
+<textarea id="replyText" cols="60" rows="5"></textarea>
+<div>
+<div><button id="postReplyButton" onclick="newThread()">Reply</button></div>
+<div><a href="/about.html#how-can-i-use-text-formatting-in-my-posts" target="_blank">Help</a></div>
+<div></div>
+</div>
+</div>
 
 </div> <!-- threadPage -->
 

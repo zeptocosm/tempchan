@@ -322,7 +322,11 @@ const stripCiphertext = function(fullCiphertext) {
 };
 
 const expandCiphertext = function(strippedCiphertext) {
-	return {"v":1,"iter":10000,"ks":128,"ts":64,"mode":"ccm","adata":"","cipher":"aes", ...strippedCiphertext};
+	let expanded = {"v":1,"iter":10000,"ks":128,"ts":64,"mode":"ccm","adata":"","cipher":"aes", ...strippedCiphertext};
+	if (expanded.iter) {
+		delete expanded["iter"];
+	}
+	return expanded;
 };
 
 const encryptionCache = {};

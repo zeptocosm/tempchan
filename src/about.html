@@ -22,6 +22,9 @@ h1 {
 .greentext {
 	color: #090;
 }
+.woRedacted {
+	color: #999;
+}
 table {
 	border: 1px solid black;
 }
@@ -37,13 +40,19 @@ td:first-child {
 <body>
 <div id="main">
 <h1>🌸 <a href="/">Tempchan</a> | About</h1>
-<p>Last updated 2021-11-23.</p>
+<p>Last updated 2022-03-20.</p>
 
 <ul>
 	<li><a href="#what-is-tempchan">What is Tempchan?</a></li>
 	<li><a href="#how-do-i-use-tempchan">How do I use Tempchan?</a></li>
 	<li><a href="#what-are-some-situations-where-tempchan-is-useful">What are some situations where Tempchan is useful?</a></li>
-	<li><a href="#how-can-i-use-text-formatting-in-my-posts">How can I use text formatting in my posts?</a></li>
+	<li><a href="#what-are-writeable-and-read-only-links">What are "writeable" and "read-only" links?</a></li>
+	<li><a href="#posting-guide">Posting guide</a>
+	<ul>
+		<li><a href="#how-can-i-use-text-formatting-in-my-posts">How can I use text formatting in my posts?</a></li>
+		<li><a href="#what-does-writers-only-do">What does "writers only" do?</a></li>
+	</ul>
+	</li>
 	<li><a href="#how-does-moderation-work">How does moderation work?</a></li>
 	<li><a href="#how-does-the-rss-feed-work">How does the RSS feed work?</a></li>
 	<li><a href="#how-secure-is-tempchan">How secure is Tempchan?</a></li>
@@ -74,7 +83,13 @@ td:first-child {
 <li>Anything else you can think of!</li>
 </ul>
 
-<h2><a name="how-can-i-use-text-formatting-in-my-posts">How can I use text formatting in my posts?</a></h2>
+<h2><a name="what-are-writeable-and-read-only-links">What are "writeable" and "read-only" links?</a></h2>
+<p>Every board has a <b>writeable link</b> and a <b>read-only link</b>. Both links show the same board with all the same posts&mdash;the only difference is whether submitting new posts is allowed. Anyone with the writeable link can both submit and read posts, whereas someone who only has the read-only link can only read and cannot post. (Thus, the read-only link can be shared with a much larger audience than the writeable link.)</p>
+<p>When you first create a board, you are taken to its writeable link; from there, there is a link to the read-only link. For convenience, the read-only page may also show the writeable link&mdash;but only if it is already in your history. If you follow a read-only link but have never seen the corresponding writeable link, it will not be shown.</p>
+
+<h2><a name="posting-guide">Posting guide</a></h2>
+
+<h3><a name="how-can-i-use-text-formatting-in-my-posts">How can I use text formatting in my posts?</a></h3>
 <table border="0" cellspacing="0">
 
 <tr>
@@ -105,6 +120,9 @@ like this.</p></td>
 </tr>
 </table>
 
+<h3><a name="what-does-writers-only-do">What does "writers only" do?</a></h3>
+<p>If you check the box labeled "writers only," the post will be visible only to people with the writeable link, and not to people with the read-only link. When viewed via the read-only link, the post will only appear as <span class="woRedacted">[Visible to writers only]</span>. Such posts are mainly useful for sharing the writeable link for another board when it is desired that only the writers (and not the readers) of the current board should be able to post on the other board.</p>
+
 <h2><a name="how-does-moderation-work">How does moderation work?</a></h2>
 <p>There is no moderation on Tempchan&mdash;there is no way to ban people or delete or edit posts. The creator of a board has no special privileges over the other members. Keep this in mind when deciding whom to entrust with your board link!</p>
 
@@ -115,7 +133,7 @@ like this.</p></td>
 <p>Tempchan is designed to disclose as little information as possible to the server. All posts, board titles, and board descriptions are encrypted locally using the key contained in the secret link, which means that nobody without that link&mdash;not even the server admins&mdash;can read them. The server only sees the date and time of each post, its approximate length, and how the posts are grouped into threads and boards. The secret links are never known by the server; no cookies or analytics are used.</p>
 
 <h2><a name="is-tempchan-being-actively-worked-on">Is Tempchan being actively worked on?</a></h2>
-<p>Yes! Several features are currently in the pipeline, such as board moderation and read-only links.</p>
+<p>Yes! Several features are currently in the pipeline, such as board moderation.</p>
 
 <h2><a name="how-can-i-contribute">How can I contribute?</a></h2>
 <p>Tempchan is open-source. You can contribute to the project by opening tickets and pull-requests on <a href="https://github.com/zeptocosm/tempchan" rel="noopener noreferrer" target="_blank">GitHub</a>, or by setting up your own instance. The <a href="https://github.com/zeptocosm/tempchan/blob/main/README.md" rel="noopener noreferrer" target="_blank">README</a> on GitHub also contains a link to a "Tempchan Meta" board where you can leave feedback.</p>

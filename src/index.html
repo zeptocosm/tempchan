@@ -80,6 +80,9 @@ div.formValue:last-child {
 .greentext {
 	color: #090;
 }
+.woRedacted {
+	color: #999;
+}
 
 .pagination {
 	margin-top: 15px;
@@ -91,6 +94,11 @@ div.formValue:last-child {
 }
 
 .hidden {
+	display: none !important;
+}
+.readOnly #newThreadContainer,
+.readOnly #newPostContainer,
+.readOnly .mentioner {
 	display: none;
 }
 
@@ -99,6 +107,9 @@ div.formValue:last-child {
 }
 #myBoardsDiv h3, #myBoardsList a {
 	margin-right: 10px;
+}
+#myBoardsDiv sup {
+	font-variant: small-caps;
 }
 
 .textareaContainer {
@@ -116,6 +127,19 @@ div.formValue:last-child {
 }
 .textareaContainer > div > div:nth-child(3) {
 	clear: both;
+}
+
+#readOnlyMarker, #threadReadOnlyMarker, .writersOnlyMarker {
+	font-variant: small-caps;
+	line-height: 0;
+	cursor: help;
+	text-decoration: underline;
+}
+#readOnlyMarker, #threadReadOnlyMarker {
+	display: none;
+}
+.readOnly #readOnlyMarker, .readOnly #threadReadOnlyMarker {
+	display: inline;
 }
 
 #qrModalOuter {
@@ -163,7 +187,7 @@ div.formValue:last-child {
 
 <div id="incompleteLinkPage" class="hidden">
 	<h2>Incomplete link!</h2>
-	<p>You've come here from an RSS feed for a board whose secret link is not in your history; therefore the board cannot be decrypted. Visit the board at its complete link (with <code>#</code> followed by 25 characters), and then reload this page.
+	<p>You've come here from an RSS feed for a board whose secret link is not in your history; therefore the board cannot be decrypted. Visit the board at its complete link (with <code>#</code> followed by 22&ndash;25 characters), and then reload this page.
 	<p><a href="/">Back to home</a></p>
 </div>
 
@@ -205,11 +229,12 @@ div.formValue:last-child {
 	<div><input type="text" style="max-width:30px" id="newBoardLifespan"/></div>
 	<div class="error" id="lifespanError"></div>
 </div>
+
 </div>
 
 <ul>
-	<li>Once the board is created, these settings cannot be changed. Copy its link and share it with others to invite them.</li>
-	<li>Anyone with the link can read and write posts on the board, but nobody else can. Posts cannot be deleted once submitted.</li>
+	<li>Once the board is created, these settings cannot be changed. You will be taken to the board's <b>writeable link</b>, which you can share with others to invite them to post on it. Posts cannot be deleted once submitted.</li>
+	<li>The board will also have a <b>read-only link</b>, which lets people read but not post.</li>
 	<li>The board (and all of its posts) will be deleted at midnight (GMT) after the given lifespan has elapsed.</li>
 </ul>
 
@@ -225,17 +250,20 @@ div.formValue:last-child {
 
 <div id="boardPage" class="hidden">
 
-<h1><a href="#">Tempchan</a> | <span id="boardTitle"></span></h1>
+<h1><a href="#">Tempchan</a> | <span id="boardTitle"></span><sup id="readOnlyMarker" title="You are viewing this board via its read-only link; you can only post here if you have the writeable link.">ro</sup></h1>
 
-<h3 style="text-align: center">Time till deletion: <span id="boardDeletionCountdown"></span><br/><a href="" onclick="showQR(); return false">QR</a> &middot; <a id="rssLink" href="" target="_blank" rel="noopener noreferrer">RSS</a></h3>
+<h3 style="text-align: center">Time till deletion: <span id="boardDeletionCountdown"></span><br/><a href="" onclick="showQR(); return false">QR</a> &middot; <a id="rssLink" href="" target="_blank" rel="noopener noreferrer">RSS</a><span id="otherAccessLinkSpan"> &middot; <a id="otherAccessLink" href=""></a></span></h3>
 
 <div id="boardDescription"></div>
 
-<div class="textareaContainer">
+<div class="textareaContainer" id="newThreadContainer">
 <textarea id="newThreadText" cols="60" rows="5"></textarea>
 <div>
-<div><button id="newThreadButton" onclick="newThread()">Post new thread</button></div>
-<div><a href="/about.html#how-can-i-use-text-formatting-in-my-posts" target="_blank">Help</a></div>
+<div>
+	<button id="newThreadButton" onclick="newThread()">Post new thread</button>
+	<label><input type="checkbox" id="newThreadWo" />writers only</label>&nbsp;
+</div>
+<div><a href="/about.html#posting-guide" target="_blank">Help</a></div>
 <div></div>
 </div>
 </div>
@@ -253,17 +281,20 @@ div.formValue:last-child {
 
 <div id="threadPage" class="hidden">
 
-<h1><a href="#">Tempchan</a> | <a href="" id="threadBoardTitle">(board title)</a> | #<span id="threadHeader"></span></h1>
+<h1><a href="#">Tempchan</a> | <a href="" id="threadBoardTitle"></a><sup id="threadReadOnlyMarker" title="You are viewing this board via its read-only link; you can only post here if you have the writeable link.">ro</sup> | #<span id="threadHeader"></span></h1>
 
 <h3 style="text-align: center">Time till deletion: <span id="threadDeletionCountdown"></span></h3>
 
 <div id="fullThread"></div>
 
-<div class="textareaContainer">
+<div class="textareaContainer" id="newPostContainer">
 <textarea id="replyText" cols="60" rows="5"></textarea>
 <div>
-<div><button id="postReplyButton" onclick="postReply()">Reply</button></div>
-<div><a href="/about.html#how-can-i-use-text-formatting-in-my-posts" target="_blank">Help</a></div>
+<div>
+	<button id="postReplyButton" onclick="postReply()">Reply</button>
+	<label><input type="checkbox" id="postReplyWo" />writers only</label>&nbsp;
+</div>
+<div><a href="/about.html#posting-guide" target="_blank">Help</a></div>
 <div></div>
 </div>
 </div>
@@ -358,6 +389,8 @@ const decrypt = function(key, ciphertext) {
 };
 
 const ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const BITS_PER_CHAR = Math.ceil(Math.log(ALPHABET.length)/Math.log(2));
+
 const secureRandomString = function(length) {
 	let string = "";
 	for (let i=0; i<length; i++) {
@@ -367,8 +400,49 @@ const secureRandomString = function(length) {
 	return string;
 };
 
-const SECRET_KEY_LENGTH = 22;
-const BOARD_CODE_LENGTH = 3;
+const remainder = function(byteArray, modulus) {
+	let result = 0;
+	for (let i=0; i<sjcl.bitArray.bitLength(byteArray); i++) {
+		result = (result*2) % modulus;
+		let bit = sjcl.bitArray.extract(byteArray,i,1);
+		result = (result+bit) % modulus;
+	}
+	return result;
+};
+
+const hashToString = function(input, affix, outputLength) {
+	let affixedInput = affix + ":" + input + ":" + affix;
+	let hashBytes = sjcl.hash.sha256.hash(affixedInput);
+	// This "encoding" is lossy, but we're throwing away ~half the bits anyway.
+	let output = "";
+	let end = sjcl.bitArray.bitLength(hashBytes)
+	while (output.length < outputLength && end > 0) {
+		let index = remainder(sjcl.bitArray.bitSlice(hashBytes, 0, end), ALPHABET.length);
+		output += ALPHABET[index];
+		end -= BITS_PER_CHAR;
+	}
+	return output;
+};
+
+const readingKeyFromRootKey = function(rootKey) {
+	return hashToString(rootKey, READING_AFFIX, READING_KEY_LENGTH);
+}
+const writingKeyFromRootKey = function(rootKey) {
+	return hashToString(rootKey, WRITING_AFFIX, WRITING_KEY_LENGTH);
+}
+const boardKeyFromReadingKey = function(readingKey) {
+	return hashToString(readingKey, BOARD_AFFIX, BOARD_KEY_LENGTH);
+}
+
+const SECRET_KEY_LENGTH = 22; // Deprecated
+const ROOT_KEY_LENGTH = SECRET_KEY_LENGTH;
+const BOARD_CODE_LENGTH = 3; // Deprecated
+const READING_AFFIX = "r";
+const READING_KEY_LENGTH = SECRET_KEY_LENGTH+1;
+const WRITING_AFFIX = "w";
+const WRITING_KEY_LENGTH = SECRET_KEY_LENGTH+2;
+const BOARD_AFFIX = "b";
+const BOARD_KEY_LENGTH = 10;
 
 const MY_BOARDS_LS_KEY = "myBoards";
 
@@ -377,20 +451,30 @@ const refreshMyBoards = function() {
 	let listElement = document.getElementById("myBoardsList");
 	let divElement = document.getElementById("myBoardsDiv");
 	if (myBoards.length) {
+		let unexpiredCount = 0;
 		let listHtml = "";
 		let now = +new Date();
 		for (let i=0; i<myBoards.length; i++) {
 			let entry = myBoards[i];
 			if (entry.expirationDateMs > now) {
-				listHtml += ('<a href="/#' + entry.boardSlug + '">' + entry.title + '</a> ');
+				unexpiredCount++;
+				let readOnly = entry.boardSlug.length === READING_KEY_LENGTH;
+				listHtml += (
+					'<a href="/#' + entry.boardSlug + '">' +
+					entry.title +
+					(readOnly ? '<sup>ro</sup>' : '') +
+					'</a> '
+				);
 			}
 		}
-		listElement.innerHTML = listHtml;
-		divElement.classList.remove("hidden");
-	} else {
-		listElement.innerText = "";
-		divElement.classList.add("hidden");
+		if (unexpiredCount) {
+			listElement.innerHTML = listHtml;
+			divElement.classList.remove("hidden");
+			return;
+		}
 	}
+	listElement.innerText = "";
+	divElement.classList.add("hidden");
 };
 refreshMyBoards(); // Show on initial homepage load
 
@@ -405,22 +489,85 @@ const addMyBoard = function(boardSlug, title, expirationDateMs) {
 	let myBoards = JSON.parse(window.localStorage.getItem(MY_BOARDS_LS_KEY) || "[]");
 	let myBoardsNew = [];
 
+	let rootKey;
+	let readingKey;
+	if (boardSlug.length === ROOT_KEY_LENGTH) {
+		rootKey = boardSlug;
+		readingKey = readingKeyFromRootKey(rootKey);
+	} else if (boardSlug.length === READING_KEY_LENGTH) {
+		rootKey = "";
+		readingKey = boardSlug;
+	}
+
 	let shouldAdd = true;
 	for (let i=0; i<myBoards.length; i++) {
 		let entry = myBoards[i];
-		if (entry.boardSlug === boardSlug) {
-			shouldAdd = false;
-		}
-		if (entry.expirationDateMs > +new Date()) {
-			myBoardsNew.push(entry);
+		// entry is superseded by boardSlug if entry is read-only,
+		// boardSlug is not, and they both refer to the same board.
+		let superseded = rootKey &&
+			!entry.rootKey &&
+			entry.readingKey && // TODO: remove old-style
+			entry.readingKey === readingKey;
+		if (!superseded) {
+			if (entry.boardSlug === boardSlug || // entry is the same link as the new link
+				entry.rootKey && readingKey && entry.readingKey === readingKey) { // entry itself supersedes the new link
+				shouldAdd = false;
+			}
+			if (entry.expirationDateMs > +new Date()) {
+				myBoardsNew.push(entry);
+			}
 		}
 	}
 	if (shouldAdd) {
-		myBoardsNew.push({boardSlug, title, expirationDateMs});
+		myBoardsNew.push({boardSlug, title, expirationDateMs, rootKey, readingKey});
 	}
 	
 	window.localStorage.setItem(MY_BOARDS_LS_KEY, JSON.stringify(myBoardsNew));
-}
+};
+
+const getWriteableLinkFromHistory = function(readingKey) {
+	let myBoards = JSON.parse(window.localStorage.getItem(MY_BOARDS_LS_KEY) || "[]");
+	for (let i=0; i<myBoards.length; i++) {
+		let entry = myBoards[i];
+		if (entry.readingKey === readingKey) {
+			return entry.rootKey;
+		}
+	}
+	return "";
+};
+
+const deriveKeys = function(boardSlug, wantWriteableLinkFromHistory) {
+	let secretKey;
+	let boardCode;
+	let readOnly = false;
+	let oldStyle = false; // TODO: remove
+
+	let writingKey;
+	let writeableLinkFromHistory;
+
+	if (boardSlug.length === ROOT_KEY_LENGTH) {
+		// new-style (writeable)
+		secretKey = readingKeyFromRootKey(boardSlug);
+		boardCode = boardKeyFromReadingKey(secretKey);
+		writingKey = writingKeyFromRootKey(boardSlug);
+	} else if (boardSlug.length === READING_KEY_LENGTH) {
+		// new-style (read-only)
+		secretKey = boardSlug;
+		boardCode = boardKeyFromReadingKey(secretKey);
+		readOnly = true;
+		if (wantWriteableLinkFromHistory) {
+			writeableLinkFromHistory = getWriteableLinkFromHistory(boardSlug);
+		}
+	} else if (boardSlug.length === SECRET_KEY_LENGTH + BOARD_CODE_LENGTH) {
+		// old-style (TODO: remove)
+		secretKey = boardSlug.substring(0, boardSlug.length-BOARD_CODE_LENGTH);
+		boardCode = boardSlug.substring(boardSlug.length-BOARD_CODE_LENGTH);
+		oldStyle = true;
+	}
+
+	return {secretKey, boardCode, readOnly, oldStyle, writingKey, writeableLinkFromHistory};
+};
+
 
 const createBoard = function() {
 	let title = document.getElementById("newBoardTitle").value.trim() || "(Untitled)";
@@ -448,21 +595,26 @@ const createBoard = function() {
 		return;
 	}
 
-	let secretKey = secureRandomString(SECRET_KEY_LENGTH);
+	let rootKey = secureRandomString(SECRET_KEY_LENGTH);
+	let readingKey = readingKeyFromRootKey(rootKey);
+	let boardKey = boardKeyFromReadingKey(readingKey);
+	let writingKey = writingKeyFromRootKey(rootKey);
 
 	let button = document.getElementById("createBoardButton");
 	button.disabled = true;
 
-	let titleCtString = encrypt(secretKey, title);
-	let descriptionCtString = encrypt(secretKey, description);
+	let titleCtString = encrypt(readingKey, title);
+	let descriptionCtString = encrypt(readingKey, description);
 
 	httpPost("/api/create_board", {
 		lifespan_days: lifespanDays,
 		title_ct: titleCtString,
-		description_ct: descriptionCtString
+		description_ct: descriptionCtString,
+		board_key: boardKey,
+		writing_key: writingKey
 	}, function(response) {
 		if (response.ok) {
-			window.location.hash = secretKey + response.responseText;
+			window.location.hash = rootKey;
 		} else {
 			alert("Error creating board! " + JSON.stringify(response));
 		}
@@ -486,19 +638,23 @@ const postReply = function() {
 	let lastPart = splitHash[1];
 	let opId = lastPart.split("#")[0];
 
-	let secretKey = boardSlug.substring(0, boardSlug.length-BOARD_CODE_LENGTH);
-	let boardCode = boardSlug.substring(boardSlug.length-BOARD_CODE_LENGTH);
-
+	let {secretKey, boardCode, readOnly, writingKey} = deriveKeys(boardSlug);
+	if (readOnly) {
+		alert("Cannot post from a read-only link");
+		return;
+	}
 
 	let button = document.getElementById("postReplyButton");
 	button.disabled = true;
-
-	let textCt = encrypt(secretKey, text);
+	let writersOnly = document.getElementById("postReplyWo").checked;
+	let textCt = encrypt(writersOnly ? secretKey + ":" + writingKey : secretKey, text);
 
 	httpPost("/api/create_post", {
 		text_ct: textCt,
 		board_code: boardCode,
-		parent_post_id: opId
+		parent_post_id: opId,
+		writing_key: writingKey,
+		writers_only: writersOnly
 	}, function(response) {
 		if (response.ok) {
 			let currentHash = window.location.hash.slice(1);
@@ -579,6 +735,8 @@ const clearForms = function() {
 	document.getElementById("newBoardDescription").value = "";
 	document.getElementById("newBoardLifespan").value = "";
 	document.getElementById("replyText").value = "";
+	document.getElementById("newThreadWo").checked = null;
+	document.getElementById("postReplyWo").checked = null;
 	clearErrors();
 }
 
@@ -621,21 +779,23 @@ const formatTimestamp = function(timestampMs) {
 const THREAD_ON_BOARD_TEMPLATE = 
 `<div class="thread">
 <div class="post">
-<b>Anonymous</b> <a href="/#{{boardSlug}}/{{opId}}#{{opId}}">#{{opId}}</a> {{timestamp}}
+<b>Anonymous</b> <a href="/#{{boardSlug}}/{{opId}}#{{opId}}">#{{opId}}</a> {{timestamp}} {{woMarker}}
 {{renderedText}}
 </div>
 {{lastRepliesHtml}}
-<a href="/#{{boardSlug}}/{{opId}}">Reply</a>
+<a href="/#{{boardSlug}}/{{opId}}">{{replyLinkText}}</a>
 </div>`;
 
 const POST_PREVIEW_TEMPLATE =
 `<div class="post">
-<b>Anonymous</b> <a href="/#{{boardSlug}}/{{opId}}#{{postId}}">#{{postId}}</a> {{timestamp}}
+<b>Anonymous</b> <a href="/#{{boardSlug}}/{{opId}}#{{postId}}">#{{postId}}</a> {{timestamp}} {{woMarker}}
 {{renderedText}}
 </div>`;
 
 const HIDDEN_REPLIES_TEMPLATE = `
 <p>{{hiddenCount}} repl{{pluralEnding}} hidden; <a href="/#{{boardSlug}}/{{opId}}">view all</a></p>`;
+
+const WO_REDACTED = "<p class='woRedacted'>[Visible to writers only]</p>";
 
 const MS_PER_DAY = 1000*60*60*24;
 const MS_PER_HOUR = 1000*60*60;
@@ -674,7 +834,7 @@ const startCountdown = function(element, countdownToMs) {
 			document.body.classList.add("fadeout");
 			stopCountdown();
 		}
-	}, 1000);
+	}, 100);
 }
 
 const stopCountdown = function() {
@@ -684,9 +844,9 @@ const stopCountdown = function() {
 }
 
 const showBoard = function(boardSlug, pageNum) {
-	let secretKey = boardSlug.substring(0, boardSlug.length-BOARD_CODE_LENGTH);
-	let boardCode = boardSlug.substring(boardSlug.length-BOARD_CODE_LENGTH);
-
+	let {secretKey, boardCode, writingKey, readOnly, oldStyle, writeableLinkFromHistory} =
+		deriveKeys(boardSlug, true/*wantWriteableLinkFromHistory*/);
+				
 	httpGet("/api/get_board?board_code=" +
 			encodeURIComponent(boardCode) +
 			(pageNum>1 ? "&page=" + pageNum : ""), function(response) {
@@ -712,10 +872,24 @@ const showBoard = function(boardSlug, pageNum) {
 
 		addMyBoard(boardSlug, title, expirationDateMs);
 
-		document.getElementById("htmlTitle").innerText = title + " : Tempchan";
+		document.getElementById("htmlTitle").innerText = title + " : Tempchan" + (readOnly ? " [read-only]" : "");
 		document.getElementById("boardTitle").innerText = title;
 		document.getElementById("boardDescription").innerHTML = renderText(description);
 		document.getElementById("rssLink").href = "/api/rss?board=" + boardCode;
+		document.getElementById("boardPage").classList[readOnly ? "add" : "remove"]("readOnly");
+
+		let otherAccessLinkText = "";
+		if (!oldStyle) {
+			if (!readOnly) {
+				otherAccessLinkText = "Read-only link";
+				document.getElementById("otherAccessLink").href = "#" + secretKey;
+			} else if (writeableLinkFromHistory) {
+				otherAccessLinkText = "Writeable link";
+				document.getElementById("otherAccessLink").href = "#" + writeableLinkFromHistory;
+			}
+		}
+		document.getElementById("otherAccessLink").innerText = otherAccessLinkText;
+		document.getElementById("otherAccessLinkSpan").classList[otherAccessLinkText ? "remove" : "add"]("hidden");
 
 		let pagination = "";
 		if (pageCount > 1) {
@@ -739,7 +913,9 @@ const showBoard = function(boardSlug, pageNum) {
 		let threadsHtml = "";
 		for (let i=0; i<threads.length; i++) {
 			let thread = threads[i];
-			let opText = renderText(decrypt(secretKey, thread.op.text_ct));
+			let redact = thread.op.writers_only && readOnly;
+			let decryptionKey = thread.op.writers_only ? secretKey + ":" + writingKey : secretKey;
+			let opText = redact ? WO_REDACTED : renderText(decrypt(decryptionKey, thread.op.text_ct));
 			let lastRepliesHtml = "";
 			if (thread.op.replies_count) {
 				let hiddenCount = thread.op.replies_count - thread.last_replies.length;
@@ -754,12 +930,15 @@ const showBoard = function(boardSlug, pageNum) {
 				// Iterate backwards since the API returns them in reverse order
 				for (let j=thread.last_replies.length-1; j>=0; j--) {
 					let reply = thread.last_replies[j];
-					let replyText = renderText(decrypt(secretKey, reply.text_ct));
+					let redact = reply.writers_only && readOnly;
+					let decryptionKey = reply.writers_only ? secretKey + ":" + writingKey : secretKey;
+					let replyText = redact ? WO_REDACTED : renderText(decrypt(decryptionKey, reply.text_ct));
 					lastRepliesHtml += POST_PREVIEW_TEMPLATE
 						.replaceAll("{{boardSlug}}", boardSlug)
 						.replaceAll("{{opId}}", thread.op.post_id)
 						.replaceAll("{{postId}}", reply.post_id)
 						.replaceAll("{{timestamp}}", formatTimestamp(reply.timestamp_ms))
+						.replaceAll("{{woMarker}}", reply.writers_only ? WO_MARKER : "")
 						.replaceAll("{{renderedText}}", replyText);
 				}
 			}
@@ -767,17 +946,17 @@ const showBoard = function(boardSlug, pageNum) {
 				.replaceAll("{{boardSlug}}", boardSlug)
 				.replaceAll("{{opId}}", thread.op.post_id)
 				.replaceAll("{{timestamp}}", formatTimestamp(thread.op.timestamp_ms))
+				.replaceAll("{{woMarker}}", thread.op.writers_only ? WO_MARKER : "")
 				.replaceAll("{{renderedText}}", opText)
-				.replaceAll("{{lastRepliesHtml}}", lastRepliesHtml);
+				.replaceAll("{{lastRepliesHtml}}", lastRepliesHtml)
+				.replaceAll("{{replyLinkText}}", readOnly ? "View thread" : "Reply");
 			threadsHtml += threadHtml;
 		}
 		document.getElementById("threadsView").innerHTML = threadsHtml;
 
-
 		let timeTillDeletionMs = expirationDateMs - new Date();
 		document.getElementById("boardDeletionCountdown").innerText = formatDuration(timeTillDeletionMs);
 		document.getElementById("boardDeletionCountdown").title = formatTimestamp(expirationDateMs);
-
 		clearForms();
 		hideAllBut("boardPage");
 		if (timeTillDeletionMs < 10*MS_PER_MINUTE) {
@@ -807,13 +986,17 @@ const hideQR = function() {
 
 const POST_ON_THREAD_TEMPLATE = `
 <div class="post{{highlightStyle}}" id="post{{postId}}">
-<b>Anonymous</b> <a href="/#{{boardSlug}}/{{opId}}#{{postId}}">#{{postId}}</a> <a href="" onclick="mention({{postId}}); return false" title="Mention this post">&lt;&lt;</a> {{timestamp}} {{backmentions}}
+<b>Anonymous</b> <a href="/#{{boardSlug}}/{{opId}}#{{postId}}">#{{postId}}</a> 
+<a class="mentioner" href="" onclick="mention({{postId}}); return false" title="Mention this post">&lt;&lt;</a> 
+{{timestamp}} {{woMarker}} {{backmentions}}
 {{renderedText}}
 </div>`;
 
+const WO_MARKER = "<sup class='writersOnlyMarker' title='Visible to writers only'>[wo]</sup>";
+
 const showThread = function(boardSlug, opId, highlitPost) {
-	let secretKey = boardSlug.substring(0, boardSlug.length-BOARD_CODE_LENGTH);
-	let boardCode = boardSlug.substring(boardSlug.length-BOARD_CODE_LENGTH);
+	let {secretKey, boardCode, readOnly, writingKey} = deriveKeys(boardSlug);
+
 	httpGet("/api/get_thread?board_code=" + encodeURIComponent(boardCode) + "&op_id=" + opId, function(response) {
 		if (!response.ok) {
 			if (response.status === 404) {
@@ -836,7 +1019,7 @@ const showThread = function(boardSlug, opId, highlitPost) {
 		addMyBoard(boardSlug, boardTitle, expirationDateMs);
 
 		document.getElementById("htmlTitle").innerText =
-			boardTitle + " | #" + opId + " : Tempchan";
+			boardTitle + " | #" + opId + " : Tempchan" + (readOnly ? " [read-only]" : "");
 		
 		// First pass: Assemble the list of postIds
 		let postIdsOnPage = [];
@@ -854,8 +1037,10 @@ const showThread = function(boardSlug, opId, highlitPost) {
 		for (let i=0; i<posts.length; i++) {
 			let post = posts[i];
 			let mentionsInPost = [];
-			let renderedText = renderText(
-				decrypt(secretKey, post.text_ct),
+			let redact = post.writers_only && readOnly;
+			let decryptionKey = post.writers_only ? secretKey + ":" + writingKey : secretKey;
+			let renderedText = redact ? WO_REDACTED : renderText(
+				decrypt(decryptionKey, post.text_ct),
 				postIdsOnPage,
 				threadHash,
 				mentionsInPost
@@ -882,7 +1067,6 @@ const showThread = function(boardSlug, opId, highlitPost) {
 		let threadHtml = "";
 		for (let i=0; i<posts.length; i++) {
 			let post = posts[i];
-
 			let mentionsOfThisPost = mentionsOfEachPost[i] || [];
 			let backmentionsHtml = "";
 			for (let j=0; j<mentionsOfThisPost.length; j++) {
@@ -903,6 +1087,7 @@ const showThread = function(boardSlug, opId, highlitPost) {
 				.replaceAll("{{opId}}", opId)
 				.replaceAll("{{postId}}", post.post_id)
 				.replaceAll("{{timestamp}}", formatTimestamp(post.timestamp_ms))
+				.replaceAll("{{woMarker}}", post.writers_only ? WO_MARKER : "")
 				.replaceAll("{{backmentions}}", backmentionsHtml)
 				.replaceAll("{{renderedText}}", renderedTexts[i])
 				.replaceAll("{{highlightStyle}}", highlitPost && parseInt(highlitPost) === post.post_id ? " highlit" : "");
@@ -918,7 +1103,9 @@ const showThread = function(boardSlug, opId, highlitPost) {
 		document.getElementById("threadDeletionCountdown").innerText = formatDuration(timeTillDeletionMs);
 		document.getElementById("threadDeletionCountdown").title = formatTimestamp(expirationDateMs);
 		clearForms();
+		document.getElementById("threadPage").classList[readOnly ? "add" : "remove"]("readOnly");
 		hideAllBut("threadPage");
+
 		if (timeTillDeletionMs < 10*MS_PER_MINUTE) {
 			startCountdown(document.getElementById("threadDeletionCountdown"), expirationDateMs);
 		}
@@ -993,35 +1180,48 @@ const newThread = function() {
 		return;
 	}
 
-	// Fix this to work with other hash types
 	let boardSlug = window.location.hash.slice(1);
-	let secretKey = boardSlug.substring(0, boardSlug.length-BOARD_CODE_LENGTH);
-	let boardCode = boardSlug.substring(boardSlug.length-BOARD_CODE_LENGTH);
+	let {secretKey, boardCode, readOnly, writingKey} = deriveKeys(boardSlug);
+	if (readOnly) {
+		alert("Cannot post from a read-only link");
+		return;
+	}
 
 	let button = document.getElementById("newThreadButton");
 	button.disabled = true;
-
-	let textCtString = encrypt(secretKey, text);
+	let writersOnly = document.getElementById("newThreadWo").checked;
+	let textCtString = encrypt(writersOnly ? secretKey + ":" + writingKey : secretKey, text);
 
 	httpPost("/api/create_post", {
 		text_ct: textCtString,
-		board_code: boardCode
+		board_code: boardCode,
+		writing_key: writingKey,
+		writers_only: writersOnly
 	}, function(response) {
 		if (response.ok) {
 			let newHash = boardSlug + "/" + response.responseText;
 			window.location.hash = newHash;
 		} else {
-			alert("Error creating post! " + JSON.stringify(res));
+			alert("Error creating post! " + JSON.stringify(response));
 		}
 		button.disabled = null;
 	});
 }
 
+// TODO: make this more efficient
 const findBoardSlug = function(boardCode) {
 	let myBoards = JSON.parse(window.localStorage.getItem(MY_BOARDS_LS_KEY) || "[]");
 	for (let i=0; i<myBoards.length; i++) {
 		let entry = myBoards[i];
-		if (entry.boardSlug.endsWith(boardCode)) {
+		if (boardCode.length === BOARD_CODE_LENGTH && // old-style (TODO: remove)
+				entry.boardSlug.endsWith(boardCode) ||
+			boardCode.length === BOARD_KEY_LENGTH && ( // new-style
+					entry.boardSlug.length === ROOT_KEY_LENGTH && // (writeable)
+						boardKeyFromReadingKey(readingKeyFromRootKey(entry.boardSlug)) === boardCode ||
+					entry.boardSlug.length === READING_KEY_LENGTH && // (read-only)
+						boardKeyFromReadingKey(entry.boardSlug) === boardCode
+				)
+			) {
 			return entry.boardSlug;
 		}
 	}
@@ -1033,7 +1233,9 @@ const handleHash = function(oldHash) {
 	if (window.location.hash) {
 		let newHash = window.location.hash.slice(1);
 		let splitHash = newHash.split("/");
-		if (splitHash[0].length === BOARD_CODE_LENGTH) {
+		if (splitHash[0].length === BOARD_KEY_LENGTH || // new-style
+			splitHash[0].length === BOARD_CODE_LENGTH // old-style (TODO: remove)
+			) {
 			let boardSlugFromHistory = findBoardSlug(splitHash[0]);
 			if (boardSlugFromHistory) {
 				// Redirect:
@@ -1043,7 +1245,10 @@ const handleHash = function(oldHash) {
 			} else {
 				showIncompleteLink();
 			}
-		} else if (splitHash[0].length === SECRET_KEY_LENGTH + BOARD_CODE_LENGTH) {
+		} else if (splitHash[0].length === ROOT_KEY_LENGTH || // new-style (writeable)
+				splitHash[0].length === READING_KEY_LENGTH || // new-style (read-only)
+				splitHash[0].length === SECRET_KEY_LENGTH + BOARD_CODE_LENGTH // old-style (TODO: remove)
+				) {
 			let boardSlug = splitHash[0];
 			if (splitHash.length === 1) {
 				showLoading();

@@ -47,7 +47,7 @@ module.exports = async function(req, res) {
 	let offset = (pageNum-1) * PAGE_SIZE;
 	let postsOnBoard = await mysql.query(
 		`SELECT
-			op.board_code, op.post_id, op.timestamp_ms, op.text_ct, op.parent_post_id,
+			op.board_code, op.post_id, op.timestamp_ms, op.text_ct, op.parent_post_id, op.writers_only,
 			(
 				SELECT MAX(timestamp_ms) FROM posts AS reply
 				WHERE reply.board_code=? AND (
@@ -70,7 +70,7 @@ module.exports = async function(req, res) {
 	for (let i=0; i<postsOnBoard.length; i++) {
 		let op = postsOnBoard[i];
 		let replies = await mysql.query(
-			`SELECT board_code, post_id, timestamp_ms, text_ct, parent_post_id FROM posts
+			`SELECT board_code, post_id, timestamp_ms, text_ct, parent_post_id, writers_only FROM posts
 			 WHERE board_code=? AND parent_post_id=?
 			 ORDER BY timestamp_ms DESC LIMIT 2`,
 			[boardCode, op.post_id]
@@ -82,8 +82,12 @@ module.exports = async function(req, res) {
 	}
 	mysql.end();
 
+	let board = boards[0];
+	delete board.writing_key_hash;
+	delete board.owner_key;
+
 	let result = {
-		board: boards[0],
+		board: board,
 		threads: threads,
 		page_count: pageCount
 	};

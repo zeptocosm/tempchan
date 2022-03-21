@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS boards (
 	board_code VARCHAR(10) NOT NULL PRIMARY KEY,
 	expiration_date_ms BIGINT NOT NULL,
 	title_ct VARCHAR(1000),
-	description_ct TEXT
+	description_ct TEXT,
+	writing_key_hash VARCHAR(100)
 );
 
 CREATE TABLE IF NOT EXISTS posts (
@@ -11,5 +12,6 @@ CREATE TABLE IF NOT EXISTS posts (
 	post_id INT NOT NULL,
 	timestamp_ms BIGINT NOT NULL,
 	text_ct TEXT,
-	parent_post_id INT
+	parent_post_id INT,
+	writers_only BOOLEAN
 );

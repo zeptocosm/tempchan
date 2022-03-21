@@ -24,7 +24,7 @@ module.exports = async function(req, res) {
 	}
 	
 	let posts = await mysql.query(
-		`SELECT board_code, post_id, timestamp_ms, text_ct, parent_post_id FROM posts
+		`SELECT board_code, post_id, timestamp_ms, text_ct, parent_post_id, writers_only FROM posts
 		 WHERE board_code=? AND (post_id=? OR parent_post_id=?)
 		 ORDER BY timestamp_ms ASC`,
 		[boardCode, opId, opId]
@@ -32,8 +32,12 @@ module.exports = async function(req, res) {
 	
 	mysql.end();
 
+	let board = boards[0];
+	delete board.writing_key_hash;
+	delete board.owner_key;
+
 	res.send(JSON.stringify({
-		board: boards[0],
+		board: board,
 		posts: posts
 	}));
 };

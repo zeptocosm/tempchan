@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
-    "serverless-mysql": "1.5.4"
+    "serverless-mysql": "1.5.4",
+    "sjcl": "1.0.8"
   }
 }

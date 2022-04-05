@@ -10,6 +10,7 @@ const mysql = require("serverless-mysql")({
 });
 const sjcl = require("sjcl");
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
+const ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 // https://altv.stuyk.com/docs/articles/snippets/password-hashing.html
 const hashPassword = function(password) {
@@ -17,6 +18,16 @@ const hashPassword = function(password) {
 	const salt = sjcl.codec.base64.fromBits(saltBits);
 	const key = sjcl.codec.base64.fromBits(sjcl.misc.pbkdf2(password, saltBits, 2000, 256));
 	return `${key}$${salt}`;
+};
+
+const validateAlphabet = function(string) {
+	for (let i=0; i<string.length; i++) {
+		let c = string.charAt(i);
+		if (ALPHABET.indexOf(c) === -1) {
+			return false;
+		}
+	}
+	return true;
 };
 
 module.exports = async function(req, res) {
@@ -54,6 +65,11 @@ module.exports = async function(req, res) {
 	let boardKey = body.board_key;
 	if (!boardKey) {
 		res.status(400).send("Missing board_key");
+		mysql.end();
+		return;
+	}
+	if (!validateAlphabet(boardKey)) {
+		res.status(400).send("Invalid board_key");
 		mysql.end();
 		return;
 	}

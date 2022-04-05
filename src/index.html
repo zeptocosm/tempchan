@@ -24,11 +24,16 @@ h1, #homePage>p, #myBoardsDiv, #myBoardsDiv *, #loadingPage *, #badLinkPage *, #
 	text-align: center;
 }
 
+button, label, input[type="checkbox"] {
+	cursor: pointer;
+}
+
 #creationForm {
 	max-width: min(100%, 720px);
 	padding: 10px;
 	padding-top: 0;
 	border: 5px solid black;
+	border-radius: 10px;
 	background-color: white;
 	margin-left: auto;
 	margin-right: auto;
@@ -56,6 +61,7 @@ div.formValue:last-child {
 
 .thread {
 	border: 1px solid black;
+	border-radius: 10px;
 	padding: 5px;
 	margin-top: 20px;
 }
@@ -72,9 +78,20 @@ div.formValue:last-child {
 	margin-right: 10px;
 	text-align: justify;
 }
-
-.highlit {
+#fullThread .post {
+	padding: 5px;
+	border: 1px dotted transparent;
+	border-radius: 10px;
+}
+#fullThread .post p:last-child {
+	margin-bottom: 4px;
+}
+#fullThread .post.highlit {
 	background-color: white;
+	border-color: black;
+}
+#newPostContainer {
+	margin-top: 5px;
 }
 
 .greentext {
@@ -157,6 +174,7 @@ div.formValue:last-child {
 	width: 200px;
 	height: 200px;
 	border: 5px solid black;
+	border-radius: 10px;
 	margin-left: auto;
 	margin-right: auto;
 	position: relative;
@@ -281,7 +299,7 @@ div.formValue:last-child {
 
 <div id="threadPage" class="hidden">
 
-<h1><a href="#">Tempchan</a> | <a href="" id="threadBoardTitle"></a><sup id="threadReadOnlyMarker" title="You are viewing this board via its read-only link; you can only post here if you have the writeable link.">ro</sup> | #<span id="threadHeader"></span></h1>
+<h1><a href="#">Tempchan</a> | <a href="" id="threadBoardTitle"></a><sup id="threadReadOnlyMarker" title="You are viewing this board via its read-only link; you can only post here if you have the writeable link.">ro</sup> | <span id="threadHeader"></span></h1>
 
 <h3 style="text-align: center">Time till deletion: <span id="threadDeletionCountdown"></span></h3>
 
@@ -352,14 +370,6 @@ const stripCiphertext = function(fullCiphertext) {
 	return {iv: fullCiphertext.iv, salt: fullCiphertext.salt, ct: fullCiphertext.ct};
 };
 
-const expandCiphertext = function(strippedCiphertext) {
-	let expanded = {"v":1,"iter":10000,"ks":128,"ts":64,"mode":"ccm","adata":"","cipher":"aes", ...strippedCiphertext};
-	if (expanded.iter) {
-		delete expanded["iter"];
-	}
-	return expanded;
-};
-
 const encryptionCache = {};
 
 const encrypt = function(key, plaintext) {
@@ -378,7 +388,7 @@ const decrypt = function(key, ciphertext) {
 	} else {
 		let plaintext;
 		try {
-			plaintext = sjcl.decrypt(key, JSON.stringify(expandCiphertext(JSON.parse(ciphertext))));
+			plaintext = sjcl.decrypt(key, JSON.stringify(stripCiphertext(JSON.parse(ciphertext))));
 			encryptionCache[cacheKey] = plaintext;
 		} catch(e) {
 			plaintext = "[[Decryption error]]";
@@ -1090,14 +1100,14 @@ const showThread = function(boardSlug, opId, highlitPost) {
 				.replaceAll("{{woMarker}}", post.writers_only ? WO_MARKER : "")
 				.replaceAll("{{backmentions}}", backmentionsHtml)
 				.replaceAll("{{renderedText}}", renderedTexts[i])
-				.replaceAll("{{highlightStyle}}", highlitPost && parseInt(highlitPost) === post.post_id ? " highlit" : "");
+				.replaceAll("{{highlightStyle}}", highlitPost === post.post_id ? " highlit" : "");
 			threadHtml += postHtml;
 		}
 
 		document.getElementById("fullThread").innerHTML = threadHtml;
 		document.getElementById("threadBoardTitle").innerText = boardTitle;
 		document.getElementById("threadBoardTitle").href = "/#" + boardSlug;
-		document.getElementById("threadHeader").innerText = opId;
+		fillThreadHeader(boardSlug, opId, highlitPost);
 
 		let timeTillDeletionMs = expirationDateMs - new Date();
 		document.getElementById("threadDeletionCountdown").innerText = formatDuration(timeTillDeletionMs);
@@ -1111,9 +1121,22 @@ const showThread = function(boardSlug, opId, highlitPost) {
 		}
 
 		if (highlitPost) {
-			document.getElementById("post" + parseInt(highlitPost)).scrollIntoView();
+			let highlitPostElement = document.getElementById("post" + highlitPost);
+			if (highlitPostElement) {
+				highlitPostElement.scrollIntoView();
+			}
 		}
 	});
+};
+
+const fillThreadHeader = function(boardSlug, opId, highlitPost) {
+	let highlitPostElement = highlitPost && document.getElementById("post" + highlitPost);
+	if (highlitPostElement) {
+		document.getElementById("threadHeader").innerHTML =
+			"<a href='/#" + boardSlug + "/" + opId + "'>#" + opId + "</a>";
+	} else {
+		document.getElementById("threadHeader").innerText = "#" + opId;
+	}
 }
 
 const mention = function(postId) {
@@ -1133,6 +1156,9 @@ const rescrollThread = function(boardSlug, opId, highlitPost) {
 	if (oldHighlitElement) {
 		oldHighlitElement.classList.remove("highlit");
 	}
+	if (!oldHighlitElement !== !highlitPost) {
+		fillThreadHeader(boardSlug, opId, highlitPost);
+	}
 	if (highlitPost) {
 		let element = document.getElementById("post" + highlitPost);
 		if (element) {
@@ -1142,7 +1168,6 @@ const rescrollThread = function(boardSlug, opId, highlitPost) {
 			showLoading();
 			showThread(boardSlug, opId, highlitPost);
 		}
-
 	} else {
 		window.scrollTo(0,0);
 	}
@@ -1233,9 +1258,22 @@ const handleHash = function(oldHash) {
 	if (window.location.hash) {
 		let newHash = window.location.hash.slice(1);
 		let splitHash = newHash.split("/");
-		if (splitHash[0].length === BOARD_KEY_LENGTH || // new-style
+		if (newHash.endsWith("/")) {
+			// Strip trailing slashes
+			let stripped = newHash;
+			while (stripped && stripped.endsWith("/")) {
+				stripped = stripped.substring(0, stripped.length-1);
+			}
+			// Redirect:
+			if (stripped) {
+				window.location.replace("#"+stripped);
+			} else {
+				window.location.replace("");
+			}
+		} else if (splitHash[0].length === BOARD_KEY_LENGTH || // new-style
 			splitHash[0].length === BOARD_CODE_LENGTH // old-style (TODO: remove)
 			) {
+			// Redirect from RSS link
 			let boardSlugFromHistory = findBoardSlug(splitHash[0]);
 			if (boardSlugFromHistory) {
 				// Redirect:
@@ -1249,41 +1287,50 @@ const handleHash = function(oldHash) {
 				splitHash[0].length === READING_KEY_LENGTH || // new-style (read-only)
 				splitHash[0].length === SECRET_KEY_LENGTH + BOARD_CODE_LENGTH // old-style (TODO: remove)
 				) {
+			// Board or thread view
 			let boardSlug = splitHash[0];
 			if (splitHash.length === 1) {
 				showLoading();
 				showBoard(boardSlug, 1);
 			} else if (splitHash.length === 2) {
 				let lastPart = splitHash[1];
-				let opId;
-				let highlitPost = void(0);
+				let opIdString;
+				let highlitPost;
 				if (lastPart.indexOf("#") !== -1) {
 					let lastPartSplit = lastPart.split("#");
-					opId = lastPartSplit[0];
-					highlitPost = lastPartSplit[1];
+					opIdString = lastPartSplit[0];
+					highlitPost = parseInt(lastPartSplit[1]);
 				} else {
-					opId = lastPart;
+					opIdString = lastPart;
+					highlitPost = 0;
 				}
+				let opId = parseInt(opIdString);
 
-				let oldHashPrefix = oldHash && oldHash.split("#")[0];
-
-				if (oldHashPrefix && (
-					newHash === oldHashPrefix ||
-					newHash.startsWith(oldHashPrefix+"#"))
-				) {
-					rescrollThread(boardSlug, opId, highlitPost);
+				if (isNaN(opId) || opId <= 0 || ""+opId !== opIdString ||
+						isNaN(highlitPost) || highlitPost < 0
+						) {
+					showBadLink();
 				} else {
-					showLoading();
-					showThread(boardSlug, opId, highlitPost);
+					let oldHashPrefix = oldHash && oldHash.split("#")[0];
+					if (document.getElementById("badLinkPage").classList.contains("hidden") &&
+						oldHashPrefix && (
+						newHash === oldHashPrefix ||
+						newHash.startsWith(oldHashPrefix+"#"))
+					) {
+						rescrollThread(boardSlug, opId, highlitPost);
+					} else {
+						showLoading();
+						showThread(boardSlug, opId, highlitPost);
+					}
 				}
 			} else if (splitHash.length === 3 && splitHash[1] === "p") {
-				showLoading();
 				let pageNum = parseInt(splitHash[2]);
 				if (pageNum) {
 					if (pageNum === 1) {
 						// Redirect:
 						window.location.replace("#"+boardSlug);
 					} else {
+						showLoading();
 						showBoard(boardSlug, pageNum);
 					}
 				} else {

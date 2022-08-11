@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS boards (
 	expiration_date_ms BIGINT NOT NULL,
 	title_ct VARCHAR(1000),
 	description_ct TEXT,
-	writing_key_hash VARCHAR(100) NOT NULL,
+	writing_key_hash VARCHAR(100),
 	owner_key_hash VARCHAR(100)
 );
 

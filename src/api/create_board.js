@@ -9,6 +9,7 @@ const mysql = require("serverless-mysql")({
 	}
 });
 const sjcl = require("sjcl");
+const OWNER_KEY_LENGTH = 16;
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -73,6 +74,12 @@ module.exports = async function(req, res) {
 		mysql.end();
 		return;
 	}
+	let ownerKey = body.owner_key;
+	if (ownerKey && (!validateAlphabet(ownerKey) || ownerKey.length !== OWNER_KEY_LENGTH)) {
+		res.status(400).send("Invalid owner_key");
+		mysql.end();
+		return;
+	}
 
 	let rows = await mysql.query(
 		"SELECT * FROM boards WHERE board_code=?",
@@ -85,11 +92,12 @@ module.exports = async function(req, res) {
 		return;
 	}
 	let writingKeyHash = hashPassword(writingKey);
+	let ownerKeyHash = ownerKey ? hashPassword(ownerKey) : null;
 
 	// There's a race condition here but it's very unlikely to happen
 	let result = await mysql.query(
-		`INSERT INTO boards (board_code, expiration_date_ms, title_ct, description_ct, writing_key_hash)
-		 VALUES (?,?,?,?,?)`, [boardKey, expirationDateMs,   titleCt,  descriptionCt,  writingKeyHash]);
+		`INSERT INTO boards   (board_code, expiration_date_ms, title_ct, description_ct, writing_key_hash, owner_key_hash)
+		 VALUES (?,?,?,?,?,?)`, [boardKey, expirationDateMs,   titleCt,  descriptionCt,  writingKeyHash,   ownerKeyHash]);
 	console.log("INSERT INTO boards:", result);
 	
 	mysql.end()

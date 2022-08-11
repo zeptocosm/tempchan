@@ -22,7 +22,7 @@ h1 {
 .greentext {
 	color: #090;
 }
-.woRedacted {
+.redacted {
 	color: #999;
 }
 table {
@@ -40,7 +40,7 @@ td:first-child {
 <body>
 <div id="main">
 <h1>🌸 <a href="/">Tempchan</a> | About</h1>
-<p>Last updated 2022-03-20.</p>
+<p>Last updated 2022-08-11.</p>
 
 <ul>
 	<li><a href="#what-is-tempchan">What is Tempchan?</a></li>
@@ -121,10 +121,11 @@ like this.</p></td>
 </table>
 
 <h3><a name="what-does-writers-only-do">What does "writers only" do?</a></h3>
-<p>If you check the box labeled "writers only," the post will be visible only to people with the writeable link, and not to people with the read-only link. When viewed via the read-only link, the post will only appear as <span class="woRedacted">[Visible to writers only]</span>. Such posts are mainly useful for sharing the writeable link for another board when it is desired that only the writers (and not the readers) of the current board should be able to post on the other board.</p>
+<p>If you check the box labeled "writers only," the post will be visible only to people with the writeable link, and not to people with the read-only link. When viewed via the read-only link, the post will only appear as <span class="redacted">[Visible to writers only]</span>. Such posts are mainly useful for sharing the writeable link for another board when it is desired that only the writers (and not the readers) of the current board should be able to post on the other board.</p>
 
 <h2><a name="how-does-moderation-work">How does moderation work?</a></h2>
-<p>There is no moderation on Tempchan&mdash;there is no way to ban people or delete or edit posts. The creator of a board has no special privileges over the other members. Keep this in mind when deciding whom to entrust with your board link!</p>
+<p>Unless specified otherwise when created, Tempchan boards are <b>Unmoderated</b>. This means that the creator of a board has no special privileges over the other members. Keep this in mind when deciding whom to entrust with your board link!</p>
+<p>If a board is marked as <b>Moderated</b>, the creator can set posts as "hidden" as well as mark their own posts with the label "Moderator" (rather than the default "Anonymous"). Such hidden posts appear to others as <span class="redacted">[Hidden by moderator]</span>. However, the board creator still cannot ban people or edit the content of posts, the board title/description, or its lifespan.</p>
 
 <h2><a name="how-does-the-rss-feed-work">How does the RSS feed work?</a></h2>
 <p>To be notified of new posts on a board, you can subscribe with your RSS reader of choice by way of the "RSS" link on the board's homepage. However, because all content is encrypted, the feed will only contain garbled text; in order to read the posts, you must separately load them in your browser. If you follow the links from the feed, you will be able to read the posts as long as the board's secret link is already in your history.</p>
@@ -133,7 +134,7 @@ like this.</p></td>
 <p>Tempchan is designed to disclose as little information as possible to the server. All posts, board titles, and board descriptions are encrypted locally using the key contained in the secret link, which means that nobody without that link&mdash;not even the server admins&mdash;can read them. The server only sees the date and time of each post, its approximate length, and how the posts are grouped into threads and boards. The secret links are never known by the server; no cookies or analytics are used.</p>
 
 <h2><a name="is-tempchan-being-actively-worked-on">Is Tempchan being actively worked on?</a></h2>
-<p>Yes! Several features are currently in the pipeline, such as board moderation.</p>
+<p>Yes! Several features are currently in the pipeline, such as moderation and board directories.</p>
 
 <h2><a name="how-can-i-contribute">How can I contribute?</a></h2>
 <p>Tempchan is open-source. You can contribute to the project by opening tickets and pull-requests on <a href="https://github.com/zeptocosm/tempchan" rel="noopener noreferrer" target="_blank">GitHub</a>, or by setting up your own instance. The <a href="https://github.com/zeptocosm/tempchan/blob/main/README.md" rel="noopener noreferrer" target="_blank">README</a> on GitHub also contains a link to a "Tempchan Meta" board where you can leave feedback.</p>

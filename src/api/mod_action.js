@@ -88,8 +88,6 @@ module.exports = async function(req, res) {
 		return;
 	}
 
-	// TODO get text and encrypt/decrypt it
-
 	let getPostResult = await mysql.query(
 		"SELECT text_ct, mod_status FROM posts WHERE board_code=? AND post_id=?",
 		[boardCode, postId]

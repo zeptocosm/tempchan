@@ -13,7 +13,7 @@ Tempchan can help a group or community have more free-flowing discussions than w
 
 If you like this project, I encourage you to contribute. You can help by:
 
-* **Experimenting with Tempchan** - Create your own boards and share them with people you want to invite. Poke around with it and find bugs or come up with feature ideas. You can give feedback either [here on Github](https://github.com/zeptocosm/tempchan/issues) or on the [Tempchan Meta board](https://tempchan.com/#DQmcXWrxqRpF2FHKQwC7RB) (note that this link may be changed or removed in the future).
+* **Experimenting with Tempchan** - Create your own boards and share them with people you want to invite. Poke around with it and find bugs or come up with feature ideas. You can give feedback either [here on Github](https://github.com/zeptocosm/tempchan/issues) or on the [Tempchan Meta board](https://tempchan.com/#8pufRnEfr3yuwn6pP92BNC) (note that this link may be changed or removed in the future).
 * **Deploying your own instance** - The more Tempchan instances there are, the more options people will have to create their own boards, without having to rely on any one instance. I would also like to make the code as platform-independent as possible.
 * **Opening pull requests** - The issue tracker lists features that I'd like to add eventually but don't have time to work on right now, so if you want to write your own implementation I'd be glad to merge it in.
 

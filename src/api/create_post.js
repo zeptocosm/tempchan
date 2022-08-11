@@ -32,7 +32,13 @@ module.exports = async function(req, res) {
 		mysql.end();
 		return;
 	}
+	if (textCt.length > 40000) {
+		res.status(400).send("text_ct too large");
+		mysql.end();
+		return;
+	}
 	let parentPostId = body.parent_post_id || 0;
+	let ownerKey = body.owner_key;
 	
 	let now = +new Date();
 	
@@ -55,12 +61,28 @@ module.exports = async function(req, res) {
 		return;
 	}
 
+	let author = 0;
+	if (body.author && ownerKey) {
+		let ownerKeyHash = boardsResult[0].owner_key_hash;
+		if (!ownerKeyHash) {
+			res.status(403).send("Cannot authenticate on unmoderated board");
+			mysql.end();
+			return;
+		}
+		if (!verifyPassword(ownerKey, ownerKeyHash)) {
+			res.status(403).send("Invalid owner_key");
+			mysql.end();
+			return;
+		}
+		author = body.author;
+	}
+
 	// post_id should equal 1 plus the number of already-existing rows with the same
 	// board_code value.
 	let insertPostResult = await mysql.query(
-		`INSERT INTO posts (board_code, text_ct, parent_post_id, timestamp_ms, post_id, writers_only)
-		 VALUES (?,?,?,?,?,?)`,
-		 [                  boardCode,  textCt,  parentPostId,   now,          0,       body.writers_only]);
+		`INSERT INTO posts (board_code, text_ct, parent_post_id, timestamp_ms, post_id, writers_only,      author)
+		 VALUES (?,?,?,?,?,?,?)`,
+		 [                  boardCode,  textCt,  parentPostId,   now,          0,       body.writers_only, author?1:0]);
 	console.log("INSERT INTO posts:", insertPostResult);
 	let insertedIncrementingId = insertPostResult.insertId;
 

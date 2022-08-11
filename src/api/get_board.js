@@ -8,6 +8,20 @@ const mysql = require("serverless-mysql")({
 		ssl : { ca : fs.readFileSync(process.env.CA_PATH || "/etc/pki/tls/certs/ca-bundle.crt") }
 	}
 });
+const sjcl = require("sjcl");
+
+// https://altv.stuyk.com/docs/articles/snippets/password-hashing.html
+const verifyPassword = function(password, storedPasswordHash) {
+    const [_key, _salt] = storedPasswordHash.split('$');
+    const saltBits = sjcl.codec.base64.toBits(_salt);
+    const derivedKey = sjcl.misc.pbkdf2(password, saltBits, 2000, 256);
+    const derivedBaseKey = sjcl.codec.base64.fromBits(derivedKey);
+
+    if (_key != derivedBaseKey) {
+        return false;
+    }
+    return true;
+};
 
 const PAGE_SIZE = 10;
 
@@ -47,7 +61,7 @@ module.exports = async function(req, res) {
 	let offset = (pageNum-1) * PAGE_SIZE;
 	let postsOnBoard = await mysql.query(
 		`SELECT
-			op.board_code, op.post_id, op.timestamp_ms, op.text_ct, op.parent_post_id, op.writers_only,
+			op.board_code, op.post_id, op.timestamp_ms, op.text_ct, op.parent_post_id, op.writers_only, op.mod_status, op.author,
 			(
 				SELECT MAX(timestamp_ms) FROM posts AS reply
 				WHERE reply.board_code=? AND (
@@ -70,7 +84,7 @@ module.exports = async function(req, res) {
 	for (let i=0; i<postsOnBoard.length; i++) {
 		let op = postsOnBoard[i];
 		let replies = await mysql.query(
-			`SELECT board_code, post_id, timestamp_ms, text_ct, parent_post_id, writers_only FROM posts
+			`SELECT board_code, post_id, timestamp_ms, text_ct, parent_post_id, writers_only, mod_status, author FROM posts
 			 WHERE board_code=? AND parent_post_id=?
 			 ORDER BY timestamp_ms DESC LIMIT 2`,
 			[boardCode, op.post_id]
@@ -84,7 +98,8 @@ module.exports = async function(req, res) {
 
 	let board = boards[0];
 	delete board.writing_key_hash;
-	delete board.owner_key;
+	board.moderated = !!board.owner_key_hash;
+	delete board.owner_key_hash;
 
 	let result = {
 		board: board,

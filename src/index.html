@@ -97,7 +97,7 @@ div.formValue:last-child {
 .greentext {
 	color: #090;
 }
-.woRedacted {
+.redacted {
 	color: #999;
 }
 
@@ -159,7 +159,7 @@ div.formValue:last-child {
 	display: inline;
 }
 
-#qrModalOuter {
+#qrModalOuter, #modModalOuter {
 	background-color: rgb(0,0,0);
 	background-color: rgba(0,0,0,0.5);
 	width: 100%;
@@ -169,15 +169,17 @@ div.formValue:last-child {
 	left: 0;
 	top: 0;
 }
-#qrModalInner {
+#qrModalInner, #modModalInner {
 	background-color: white;
-	width: 200px;
-	height: 200px;
 	border: 5px solid black;
 	border-radius: 10px;
 	margin-left: auto;
 	margin-right: auto;
 	position: relative;
+}
+#qrModalInner {
+	width: 200px;
+	height: 200px;
 	top: 150px;
 }
 #qrCode {
@@ -188,6 +190,14 @@ div.formValue:last-child {
 #qrCode table {
 	margin-left: auto;
 	margin-right: auto;
+}
+#modModalInner {
+	width: min(40%,500px);
+	top: 150px;
+}
+#modPanel {
+	padding-left: 20px;
+	padding-right: 20px;
 }
 
 
@@ -213,7 +223,7 @@ div.formValue:last-child {
 
 <h1>🌸 Tempchan</h1>
 
-<p><b>Tempchan</b> is a way of making anonymous, private, temporary discussion boards. <a href="/about.html">Learn more</a></p>
+<p><b>Tempchan</b> is a way of making anonymous, private, temporary discussion boards. <a href="/about.html" rel="noopener noreferrer" target="_blank">Learn more</a></p>
 
 <p class="error" id="noscriptWarning">Tempchan requires JavaScript to run, in order to encrypt and decrypt messages in your web browser.</p>
 <script>document.getElementById("noscriptWarning").style = "display:none";</script>
@@ -247,11 +257,21 @@ div.formValue:last-child {
 	<div><input type="text" style="max-width:30px" id="newBoardLifespan"/></div>
 	<div class="error" id="lifespanError"></div>
 </div>
+<div class="formValue">
+	<div><b>Moderation</b></div>
+	<div><a href="/about.html#how-does-moderation-work" rel="noopener noreferrer" target="_blank">(What is this?)</a></div>
+	<div><select id="newBoardModeration" onchange="toggleModerationExplanation()">
+		<option value="unmoderated" selected>Unmoderated</option>
+		<option value="ownermoderated">Moderated</option>
+	</select></div>
+</div>
 
 </div>
 
 <ul>
-	<li>Once the board is created, these settings cannot be changed. You will be taken to the board's <b>writeable link</b>, which you can share with others to invite them to post on it. Posts cannot be deleted once submitted.</li>
+	<li>Once the board is created, these settings cannot be changed. You will be taken to the board's <b>writeable link</b>, which you can share with others to invite them to post on it.</li>
+	<li id="unmoderatedExplanation">Posts cannot be deleted once submitted.</li>
+	<li id="moderatedExplanation" class="hidden">You will also be given a <b>moderator key</b>, which you can use to hide posts from others.</li>
 	<li>The board will also have a <b>read-only link</b>, which lets people read but not post.</li>
 	<li>The board (and all of its posts) will be deleted at midnight (GMT) after the given lifespan has elapsed.</li>
 </ul>
@@ -270,7 +290,12 @@ div.formValue:last-child {
 
 <h1><a href="#">Tempchan</a> | <span id="boardTitle"></span><sup id="readOnlyMarker" title="You are viewing this board via its read-only link; you can only post here if you have the writeable link.">ro</sup></h1>
 
-<h3 style="text-align: center">Time till deletion: <span id="boardDeletionCountdown"></span><br/><a href="" onclick="showQR(); return false">QR</a> &middot; <a id="rssLink" href="" target="_blank" rel="noopener noreferrer">RSS</a><span id="otherAccessLinkSpan"> &middot; <a id="otherAccessLink" href=""></a></span></h3>
+<h3 style="text-align: center">Time till deletion: <span id="boardDeletionCountdown"></span><br/>
+<a href="" onclick="showQR(); return false">QR</a>
+&middot; <a id="rssLink" href="" target="_blank" rel="noopener noreferrer">RSS</a>
+<span id="otherAccessLinkSpan"> &middot; <a id="otherAccessLink" href=""></a></span>
+<span id="boardModeratedSpan"> &middot; <a id="boardModeratedLink" href="" onclick="showModPanel(); return false">Moderated</a></span>
+</h3>
 
 <div id="boardDescription"></div>
 
@@ -280,6 +305,12 @@ div.formValue:last-child {
 <div>
 	<button id="newThreadButton" onclick="newThread()">Post new thread</button>
 	<label><input type="checkbox" id="newThreadWo" />writers only</label>&nbsp;
+	<span id="postAsNameSpan">
+		<select id="postAsName">
+			<option value="0" selected>Anonymous</option>
+			<option value="1">Moderator</option>
+		</select>
+	&nbsp;</span>
 </div>
 <div><a href="/about.html#posting-guide" target="_blank">Help</a></div>
 <div></div>
@@ -301,7 +332,9 @@ div.formValue:last-child {
 
 <h1><a href="#">Tempchan</a> | <a href="" id="threadBoardTitle"></a><sup id="threadReadOnlyMarker" title="You are viewing this board via its read-only link; you can only post here if you have the writeable link.">ro</sup> | <span id="threadHeader"></span></h1>
 
-<h3 style="text-align: center">Time till deletion: <span id="threadDeletionCountdown"></span></h3>
+<h3 style="text-align: center">Time till deletion: <span id="threadDeletionCountdown"></span>
+<span id="threadModeratedSpan"><br/><a id="threadModeratedLink" href="" onclick="showModPanel(); return false"></a></span>
+</h3>
 
 <div id="fullThread"></div>
 
@@ -311,6 +344,12 @@ div.formValue:last-child {
 <div>
 	<button id="postReplyButton" onclick="postReply()">Reply</button>
 	<label><input type="checkbox" id="postReplyWo" />writers only</label>&nbsp;
+	<span id="replyAsNameSpan">
+		<select id="replyAsName">
+			<option value="0" selected>Anonymous</option>
+			<option value="1">Moderator</option>
+		</select>
+	&nbsp;</span>
 </div>
 <div><a href="/about.html#posting-guide" target="_blank">Help</a></div>
 <div></div>
@@ -322,6 +361,22 @@ div.formValue:last-child {
 <div id="qrModalOuter" class="hidden" onclick="hideQR()">
 	<div id="qrModalInner" onclick="event.stopPropagation()">
 		<div id="qrCode"></div>
+	</div>
+</div>
+
+<div id="modModalOuter" class="hidden" onclick="hideModPanel()">
+	<div id="modModalInner" onclick="event.stopPropagation()">
+		<div id="modPanel">
+			<p>This board is <b>moderated</b>. The moderator(s) can hide or unhide posts and make posts under the name "Moderator".</p>
+			<p id="modSignIn">
+				<input id="signInOwnerKey" type="password" placeholder="Moderator key"/><br/>
+				<button id="ownerSignInButton" onclick="ownerSignIn()">Sign in as moderator</button>
+			</p>
+			<p id="modSignOut">
+				You are currently signed in as moderator for this board.<br/>
+				<button id="ownerSignOutButton" onclick="ownerSignOut()">Sign out</button>
+			</p>
+		</div>
 	</div>
 </div>
 
@@ -444,6 +499,8 @@ const boardKeyFromReadingKey = function(readingKey) {
 	return hashToString(readingKey, BOARD_AFFIX, BOARD_KEY_LENGTH);
 }
 
+let currentBoardCode = ""; // global
+
 const SECRET_KEY_LENGTH = 22; // Deprecated
 const ROOT_KEY_LENGTH = SECRET_KEY_LENGTH;
 const BOARD_CODE_LENGTH = 3; // Deprecated
@@ -453,6 +510,7 @@ const WRITING_AFFIX = "w";
 const WRITING_KEY_LENGTH = SECRET_KEY_LENGTH+2;
 const BOARD_AFFIX = "b";
 const BOARD_KEY_LENGTH = 10;
+const OWNER_KEY_LENGTH = 16;
 
 const MY_BOARDS_LS_KEY = "myBoards";
 
@@ -578,11 +636,17 @@ const deriveKeys = function(boardSlug, wantWriteableLinkFromHistory) {
 	return {secretKey, boardCode, readOnly, oldStyle, writingKey, writeableLinkFromHistory};
 };
 
+const toggleModerationExplanation = function() {
+	let moderated = document.getElementById("newBoardModeration").value === "ownermoderated";
+	document.getElementById("unmoderatedExplanation").classList[moderated ? "add" : "remove"]("hidden");
+	document.getElementById("moderatedExplanation").classList[moderated ? "remove" : "add"]("hidden");
+}
 
 const createBoard = function() {
 	let title = document.getElementById("newBoardTitle").value.trim() || "(Untitled)";
 	let description = document.getElementById("newBoardDescription").value.trim() || "(No description)";
 	let lifespanDays = parseInt(document.getElementById("newBoardLifespan").value.trim());
+	let moderated = document.getElementById("newBoardModeration").value === "ownermoderated";
 
 	clearErrors();
 	let anyErrors = false;
@@ -609,6 +673,10 @@ const createBoard = function() {
 	let readingKey = readingKeyFromRootKey(rootKey);
 	let boardKey = boardKeyFromReadingKey(readingKey);
 	let writingKey = writingKeyFromRootKey(rootKey);
+	let ownerKey = "";
+	if (moderated) {
+		ownerKey = secureRandomString(OWNER_KEY_LENGTH);
+	}
 
 	let button = document.getElementById("createBoardButton");
 	button.disabled = true;
@@ -621,10 +689,14 @@ const createBoard = function() {
 		title_ct: titleCtString,
 		description_ct: descriptionCtString,
 		board_key: boardKey,
-		writing_key: writingKey
+		writing_key: writingKey,
+		owner_key: ownerKey
 	}, function(response) {
 		if (response.ok) {
 			window.location.hash = rootKey;
+			if (moderated) {
+				prompt("The following is the moderator key for this board: make a copy and keep it safe! You must use this key in order to perform moderation actions (hiding/unhiding posts, and marking posts as \"Moderator\"). If you lose it, it cannot be recovered.", ownerKey);
+			}
 		} else {
 			alert("Error creating board! " + JSON.stringify(response));
 		}
@@ -658,13 +730,21 @@ const postReply = function() {
 	button.disabled = true;
 	let writersOnly = document.getElementById("postReplyWo").checked;
 	let textCt = encrypt(writersOnly ? secretKey + ":" + writingKey : secretKey, text);
+	let author = parseInt(document.getElementById("replyAsName").value);
+	let ownerKey = author ? getOwnerKeyFromHistory(boardCode) : "";
+	if (author && !ownerKey) {
+		alert("Must be signed in as moderator to do that");
+		return;
+	}
 
 	httpPost("/api/create_post", {
 		text_ct: textCt,
 		board_code: boardCode,
 		parent_post_id: opId,
 		writing_key: writingKey,
-		writers_only: writersOnly
+		writers_only: writersOnly,
+		author: author,
+		owner_key: ownerKey
 	}, function(response) {
 		if (response.ok) {
 			let currentHash = window.location.hash.slice(1);
@@ -744,9 +824,13 @@ const clearForms = function() {
 	document.getElementById("newBoardTitle").value = "";
 	document.getElementById("newBoardDescription").value = "";
 	document.getElementById("newBoardLifespan").value = "";
+	document.getElementById("newBoardModeration").selectedIndex = 0;
+	toggleModerationExplanation();
 	document.getElementById("replyText").value = "";
 	document.getElementById("newThreadWo").checked = null;
 	document.getElementById("postReplyWo").checked = null;
+	document.getElementById("postAsName").selectedIndex = 0;
+	document.getElementById("replyAsName").selectedIndex = 0;
 	clearErrors();
 }
 
@@ -786,10 +870,15 @@ const formatTimestamp = function(timestampMs) {
 		.replace("T", " ").replace(/\.\d\d\dZ/, "");
 }
 
+const AUTHOR_NAMES = [
+	"Anonymous",
+	"Moderator"
+];
+
 const THREAD_ON_BOARD_TEMPLATE = 
 `<div class="thread">
 <div class="post">
-<b>Anonymous</b> <a href="/#{{boardSlug}}/{{opId}}#{{opId}}">#{{opId}}</a> {{timestamp}} {{woMarker}}
+<b>{{authorName}}</b> <a href="/#{{boardSlug}}/{{opId}}#{{opId}}">#{{opId}}</a> {{timestamp}} {{woMarker}}
 {{renderedText}}
 </div>
 {{lastRepliesHtml}}
@@ -798,14 +887,15 @@ const THREAD_ON_BOARD_TEMPLATE =
 
 const POST_PREVIEW_TEMPLATE =
 `<div class="post">
-<b>Anonymous</b> <a href="/#{{boardSlug}}/{{opId}}#{{postId}}">#{{postId}}</a> {{timestamp}} {{woMarker}}
+<b>{{authorName}}</b> <a href="/#{{boardSlug}}/{{opId}}#{{postId}}">#{{postId}}</a> {{timestamp}} {{woMarker}}
 {{renderedText}}
 </div>`;
 
 const HIDDEN_REPLIES_TEMPLATE = `
 <p>{{hiddenCount}} repl{{pluralEnding}} hidden; <a href="/#{{boardSlug}}/{{opId}}">view all</a></p>`;
 
-const WO_REDACTED = "<p class='woRedacted'>[Visible to writers only]</p>";
+const WO_REDACTED = "<p class='redacted'>[Visible to writers only]</p>";
+const MOD_REDACTED = "<p class='redacted'>[Hidden by moderator]</p>";
 
 const MS_PER_DAY = 1000*60*60*24;
 const MS_PER_HOUR = 1000*60*60;
@@ -868,6 +958,7 @@ const showBoard = function(boardSlug, pageNum) {
 			}
 			return;
 		}
+		currentBoardCode = boardCode;
 		let resObj = JSON.parse(response.responseText);
 		let boardObj = resObj.board;
 		let threads = resObj.threads;
@@ -876,6 +967,7 @@ const showBoard = function(boardSlug, pageNum) {
 		// Board info:
 		let titleCt = boardObj.title_ct;
 		let descriptionCt = boardObj.description_ct;
+		let isModerated = boardObj.moderated;
 		let expirationDateMs = boardObj.expiration_date_ms;
 		let title = decrypt(secretKey, titleCt);
 		let description = decrypt(secretKey, descriptionCt);
@@ -920,12 +1012,14 @@ const showBoard = function(boardSlug, pageNum) {
 		document.getElementById("paginationBottom").innerHTML = pagination;
 
 		// Thread listing:
+		let renderedTextPlaceholder = secureRandomString(50); // TODO get rid of this ugly hack
 		let threadsHtml = "";
 		for (let i=0; i<threads.length; i++) {
 			let thread = threads[i];
-			let redact = thread.op.writers_only && readOnly;
+			let modRedact = thread.op.mod_status === 1;
+			let woRedact = thread.op.writers_only && readOnly;
 			let decryptionKey = thread.op.writers_only ? secretKey + ":" + writingKey : secretKey;
-			let opText = redact ? WO_REDACTED : renderText(decrypt(decryptionKey, thread.op.text_ct));
+			let opText = modRedact ? MOD_REDACTED : woRedact ? WO_REDACTED : renderText(decrypt(decryptionKey, thread.op.text_ct));
 			let lastRepliesHtml = "";
 			if (thread.op.replies_count) {
 				let hiddenCount = thread.op.replies_count - thread.last_replies.length;
@@ -940,33 +1034,40 @@ const showBoard = function(boardSlug, pageNum) {
 				// Iterate backwards since the API returns them in reverse order
 				for (let j=thread.last_replies.length-1; j>=0; j--) {
 					let reply = thread.last_replies[j];
-					let redact = reply.writers_only && readOnly;
+					let modRedact = reply.mod_status === 1;
+					let woRedact = reply.writers_only && readOnly;
 					let decryptionKey = reply.writers_only ? secretKey + ":" + writingKey : secretKey;
-					let replyText = redact ? WO_REDACTED : renderText(decrypt(decryptionKey, reply.text_ct));
+					let replyText = modRedact ? MOD_REDACTED : woRedact ? WO_REDACTED : renderText(decrypt(decryptionKey, reply.text_ct));
 					lastRepliesHtml += POST_PREVIEW_TEMPLATE
 						.replaceAll("{{boardSlug}}", boardSlug)
 						.replaceAll("{{opId}}", thread.op.post_id)
 						.replaceAll("{{postId}}", reply.post_id)
+						.replaceAll("{{authorName}}", AUTHOR_NAMES[reply.author||0])
 						.replaceAll("{{timestamp}}", formatTimestamp(reply.timestamp_ms))
 						.replaceAll("{{woMarker}}", reply.writers_only ? WO_MARKER : "")
-						.replaceAll("{{renderedText}}", replyText);
+						.replaceAll("{{renderedText}}", replyText)
+						.replaceAll("{{renderedText}}", renderedTextPlaceholder);
 				}
 			}
 			let threadHtml = THREAD_ON_BOARD_TEMPLATE
 				.replaceAll("{{boardSlug}}", boardSlug)
 				.replaceAll("{{opId}}", thread.op.post_id)
+				.replaceAll("{{authorName}}", AUTHOR_NAMES[thread.op.author||0])
 				.replaceAll("{{timestamp}}", formatTimestamp(thread.op.timestamp_ms))
 				.replaceAll("{{woMarker}}", thread.op.writers_only ? WO_MARKER : "")
-				.replaceAll("{{renderedText}}", opText)
+				.replaceAll("{{replyLinkText}}", readOnly ? "View thread" : "Reply")
 				.replaceAll("{{lastRepliesHtml}}", lastRepliesHtml)
-				.replaceAll("{{replyLinkText}}", readOnly ? "View thread" : "Reply");
+				.replaceAll("{{renderedText}}", opText)
+				.replaceAll(renderedTextPlaceholder, "{{renderedText}}");
 			threadsHtml += threadHtml;
 		}
 		document.getElementById("threadsView").innerHTML = threadsHtml;
 
+		let signedInAsOwner = isModerated && !!getOwnerKeyFromHistory(boardCode);
 		let timeTillDeletionMs = expirationDateMs - new Date();
 		document.getElementById("boardDeletionCountdown").innerText = formatDuration(timeTillDeletionMs);
 		document.getElementById("boardDeletionCountdown").title = formatTimestamp(expirationDateMs);
+		setUpModFeatures(isModerated, "boardModeratedLink", "boardModeratedSpan", "postAsNameSpan", readOnly, signedInAsOwner);
 		clearForms();
 		hideAllBut("boardPage");
 		if (timeTillDeletionMs < 10*MS_PER_MINUTE) {
@@ -988,21 +1089,86 @@ const showQR = function() {
 	}
 	document.getElementById("qrModalOuter").classList.remove("hidden");
 };
-
 const hideQR = function() {
 	document.getElementById("qrCode").innerHTML = "";
 	document.getElementById("qrModalOuter").classList.add("hidden");
 };
 
+const showModPanel = function() {
+	document.getElementById("modModalOuter").classList.remove("hidden");
+};
+const hideModPanel = function() {
+	document.getElementById("modModalOuter").classList.add("hidden");
+};
+const ownerSignIn = function() {
+	let signInOwnerKey = document.getElementById("signInOwnerKey").value;
+	if (!signInOwnerKey) {
+		return;
+	}
+
+	let boardCode = currentBoardCode;
+	let button = document.getElementById("ownerSignInButton");
+	button.disabled = true;
+	httpPost("/api/mod_action", {
+		board_code: boardCode,
+		owner_key: signInOwnerKey,
+	}, function(response) {
+		if (response.ok) {
+			setOwnerKeyInHistory(boardCode, signInOwnerKey);
+			window.location.reload();
+			button.disabled = null;
+		} else {
+			alert("Bad moderator key!");
+			button.disabled = null;
+		}
+	});
+
+};
+const ownerSignOut = function() {
+	let button = document.getElementById("ownerSignOutButton");
+	button.disabled = true;
+	setOwnerKeyInHistory(currentBoardCode, "");
+	window.location.reload();
+	button.disabled = null;
+};
+
+const setOwnerKeyInHistory = function(boardCode, setOwnerKey) {
+	let myBoards = JSON.parse(window.localStorage.getItem(MY_BOARDS_LS_KEY) || "[]");
+	for (let i=0; i<myBoards.length; i++) {
+		let entry = myBoards[i];
+		// Assume this won't be done for read-only boards
+		if (boardKeyFromReadingKey(readingKeyFromRootKey(entry.boardSlug)) === boardCode) {
+			entry.ownerKey = setOwnerKey;
+			window.localStorage.setItem(MY_BOARDS_LS_KEY, JSON.stringify(myBoards));
+			return;
+		}
+	}
+};
+
+const getOwnerKeyFromHistory = function(boardCode) {
+	let myBoards = JSON.parse(window.localStorage.getItem(MY_BOARDS_LS_KEY) || "[]");
+	for (let i=0; i<myBoards.length; i++) {
+		let entry = myBoards[i];
+		// Assume this won't be done for read-only boards
+		if (boardKeyFromReadingKey(readingKeyFromRootKey(entry.boardSlug)) === boardCode) {
+			return entry.ownerKey || "";
+		}
+	}
+	return "";
+};
+
+
 const POST_ON_THREAD_TEMPLATE = `
 <div class="post{{highlightStyle}}" id="post{{postId}}">
-<b>Anonymous</b> <a href="/#{{boardSlug}}/{{opId}}#{{postId}}">#{{postId}}</a> 
+<b>{{authorName}}</b> <a href="/#{{boardSlug}}/{{opId}}#{{postId}}">#{{postId}}</a> 
 <a class="mentioner" href="" onclick="mention({{postId}}); return false" title="Mention this post">&lt;&lt;</a> 
-{{timestamp}} {{woMarker}} {{backmentions}}
+{{timestamp}} {{woMarker}} {{backmentions}} {{modHider}}
 {{renderedText}}
 </div>`;
 
 const WO_MARKER = "<sup class='writersOnlyMarker' title='Visible to writers only'>[wo]</sup>";
+
+const MOD_HIDER_TEMPLATE = "<a href='' onclick='modHide(this, {{postId}}, {{setHide}}); return false' title='{{title}}'>{{symbol}}</a>";
 
 const showThread = function(boardSlug, opId, highlitPost) {
 	let {secretKey, boardCode, readOnly, writingKey} = deriveKeys(boardSlug);
@@ -1016,6 +1182,7 @@ const showThread = function(boardSlug, opId, highlitPost) {
 			}
 			return;
 		}
+		currentBoardCode = boardCode;
 		let res = JSON.parse(response.responseText);
 		let posts = res.posts;
 		if (!posts || posts[0].parent_post_id) {
@@ -1024,6 +1191,7 @@ const showThread = function(boardSlug, opId, highlitPost) {
 			return;
 		}
 		let board = res.board;
+		let isModerated = board.moderated;
 		let boardTitle = decrypt(secretKey, board.title_ct);
 		let expirationDateMs = board.expiration_date_ms;
 		addMyBoard(boardSlug, boardTitle, expirationDateMs);
@@ -1040,6 +1208,12 @@ const showThread = function(boardSlug, opId, highlitPost) {
 			postIdToIndex[post.post_id] = i;
 		}
 
+		let signedInAsOwner;
+		let ownerKey;
+		if (isModerated) {
+			ownerKey = getOwnerKeyFromHistory(boardCode);
+			signedInAsOwner = !!ownerKey;
+		}
 		// Second pass: Render the text, and get list of mentions in each post
 		let renderedTexts = [];
 		let mentionsInEachPost = [];
@@ -1047,14 +1221,22 @@ const showThread = function(boardSlug, opId, highlitPost) {
 		for (let i=0; i<posts.length; i++) {
 			let post = posts[i];
 			let mentionsInPost = [];
-			let redact = post.writers_only && readOnly;
+
+			let modHidden = post.mod_status === 1;
+			let modRedact = modHidden && !(signedInAsOwner && !readOnly);
+			let modReveal = modHidden && (signedInAsOwner && !readOnly);
+			let woRedact = post.writers_only && readOnly;
 			let decryptionKey = post.writers_only ? secretKey + ":" + writingKey : secretKey;
-			let renderedText = redact ? WO_REDACTED : renderText(
-				decrypt(decryptionKey, post.text_ct),
-				postIdsOnPage,
-				threadHash,
-				mentionsInPost
-			);
+			let innerCiphertext = modReveal ? decrypt(ownerKey, post.text_ct) : post.text_ct;
+			let renderedText =
+				modRedact ? MOD_REDACTED :
+				woRedact ? WO_REDACTED :
+				(modReveal ? MOD_REDACTED : "") + renderText(
+					decrypt(decryptionKey, innerCiphertext),
+					postIdsOnPage,
+					threadHash,
+					mentionsInPost
+				);
 			renderedTexts.push(renderedText);
 			mentionsInEachPost.push(mentionsInPost);
 		}
@@ -1091,16 +1273,28 @@ const showThread = function(boardSlug, opId, highlitPost) {
 					'</a> '
 				);
 			}
+
+			let modHiderHtml = "";
+			if (signedInAsOwner && !readOnly) {
+				let isHidden = post.mod_status === 1;
+				modHiderHtml = MOD_HIDER_TEMPLATE
+					.replaceAll("{{postId}}", post.post_id)
+					.replaceAll("{{setHide}}", !isHidden)
+					.replaceAll("{{title}}", (isHidden ? "Unhide" : "Hide") + " this post")
+					.replaceAll("{{symbol}}", isHidden ? "&#9675;" : "&times;");
+			} 
 			
 			let postHtml = POST_ON_THREAD_TEMPLATE
 				.replaceAll("{{boardSlug}}", boardSlug)
 				.replaceAll("{{opId}}", opId)
 				.replaceAll("{{postId}}", post.post_id)
+				.replaceAll("{{authorName}}", AUTHOR_NAMES[post.author||0])
 				.replaceAll("{{timestamp}}", formatTimestamp(post.timestamp_ms))
 				.replaceAll("{{woMarker}}", post.writers_only ? WO_MARKER : "")
 				.replaceAll("{{backmentions}}", backmentionsHtml)
-				.replaceAll("{{renderedText}}", renderedTexts[i])
-				.replaceAll("{{highlightStyle}}", highlitPost === post.post_id ? " highlit" : "");
+				.replaceAll("{{modHider}}", modHiderHtml)
+				.replaceAll("{{highlightStyle}}", highlitPost === post.post_id ? " highlit" : "")
+				.replaceAll("{{renderedText}}", renderedTexts[i]);
 			threadHtml += postHtml;
 		}
 
@@ -1114,6 +1308,7 @@ const showThread = function(boardSlug, opId, highlitPost) {
 		document.getElementById("threadDeletionCountdown").title = formatTimestamp(expirationDateMs);
 		clearForms();
 		document.getElementById("threadPage").classList[readOnly ? "add" : "remove"]("readOnly");
+		setUpModFeatures(isModerated, "threadModeratedLink", "threadModeratedSpan", "replyAsNameSpan", readOnly, signedInAsOwner);
 		hideAllBut("threadPage");
 
 		if (timeTillDeletionMs < 10*MS_PER_MINUTE) {
@@ -1128,6 +1323,24 @@ const showThread = function(boardSlug, opId, highlitPost) {
 		}
 	});
 };
+
+const setUpModFeatures = function(isModerated, linkId, spanId, asNameId, readOnly, signedInAsOwner) {
+	if (isModerated) {
+		document.getElementById(linkId).innerText = signedInAsOwner && !readOnly ? "Signed in as moderator" : "Moderated";
+		document.getElementById(asNameId).classList[signedInAsOwner ? "remove" : "add"]("hidden");
+		if (readOnly) {
+			document.getElementById("modSignIn").classList.add("hidden");
+			document.getElementById("modSignOut").classList.add("hidden");
+		} else {
+			document.getElementById("modSignIn").classList[signedInAsOwner ? "add" : "remove"]("hidden");
+			document.getElementById("modSignOut").classList[signedInAsOwner ? "remove" : "add"]("hidden");
+		}
+		document.getElementById(spanId).classList.remove("hidden");
+	} else {
+		document.getElementById(asNameId).classList.add("hidden");
+		document.getElementById(spanId).classList.add("hidden");
+	}
+}
 
 const fillThreadHeader = function(boardSlug, opId, highlitPost) {
 	let highlitPostElement = highlitPost && document.getElementById("post" + highlitPost);
@@ -1149,7 +1362,36 @@ const mention = function(postId) {
 	}
 	replyTextField.value = replyTextValue + spacer + ">>" + postId + " ";
 	replyTextField.scrollIntoView();
-}
+};
+
+const MOD_HIDE_WAITING = "...";
+const modHide = function(link, postId, setHide) {
+	let oldLinkText = link.innerText;
+	if (oldLinkText === MOD_HIDE_WAITING) {
+		return;
+	}
+	let message = setHide ?
+		"Hide this post? Others will no longer see it, but you can undo this later." :
+		"Unhide this post? Others will be able to see it again.";
+	if (confirm(message)) {
+		let boardCode = currentBoardCode;
+		link.innerText = MOD_HIDE_WAITING;
+		httpPost("/api/mod_action", {
+			board_code: boardCode,
+			post_id: postId,
+			owner_key: getOwnerKeyFromHistory(boardCode),
+			set_mod_status: setHide ? 1 : 0
+		}, function(response) {
+			if (response.ok) {
+				alert("Done!");
+				window.location.reload();
+			} else {
+				link.innerText = oldLinkText;
+				alert("Could not perform moderation action! " + JSON.stringify(response));
+			}
+		});
+	}
+};
 
 const rescrollThread = function(boardSlug, opId, highlitPost) {
 	let oldHighlitElement = document.getElementsByClassName("highlit")[0];
@@ -1174,20 +1416,24 @@ const rescrollThread = function(boardSlug, opId, highlitPost) {
 }
 
 const showBadLink = function() {
+	currentBoardCode = "";
 	document.getElementById("htmlTitle").innerText = "Tempchan : not found";
 	hideAllBut("badLinkPage");
 }
 
 const showIncompleteLink = function() {
+	currentBoardCode = "";
 	document.getElementById("htmlTitle").innerText = "Tempchan : incomplete link";
 	hideAllBut("incompleteLinkPage");
 }
 
 const showLoading = function() {
+	currentBoardCode = "";
 	hideAllBut("loadingPage");
 }
 
 const showHome = function() {
+	currentBoardCode = "";
 	clearForms();
 	document.getElementById("htmlTitle").innerText = "Tempchan : throwaway discussion boards";
 	refreshMyBoards();
@@ -1216,12 +1462,20 @@ const newThread = function() {
 	button.disabled = true;
 	let writersOnly = document.getElementById("newThreadWo").checked;
 	let textCtString = encrypt(writersOnly ? secretKey + ":" + writingKey : secretKey, text);
+	let author = parseInt(document.getElementById("postAsName").value);
+	let ownerKey = author ? getOwnerKeyFromHistory(boardCode) : "";
+	if (author && !ownerKey) {
+		alert("Must be signed in as moderator to do that");
+		return;
+	}
 
 	httpPost("/api/create_post", {
 		text_ct: textCtString,
 		board_code: boardCode,
 		writing_key: writingKey,
-		writers_only: writersOnly
+		writers_only: writersOnly,
+		author: author,
+		owner_key: ownerKey
 	}, function(response) {
 		if (response.ok) {
 			let newHash = boardSlug + "/" + response.responseText;

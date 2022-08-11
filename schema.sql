@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS boards (
 	expiration_date_ms BIGINT NOT NULL,
 	title_ct VARCHAR(1000),
 	description_ct TEXT,
-	writing_key_hash VARCHAR(100)
+	writing_key_hash VARCHAR(100) NOT NULL,
+	owner_key_hash VARCHAR(100)
 );
 
 CREATE TABLE IF NOT EXISTS posts (
@@ -13,5 +14,7 @@ CREATE TABLE IF NOT EXISTS posts (
 	timestamp_ms BIGINT NOT NULL,
 	text_ct TEXT,
 	parent_post_id INT,
-	writers_only BOOLEAN
+	writers_only BOOLEAN,
+	mod_status INT, -- 0=Default, 1=Hidden
+	author INT -- 0=Anonymous, 1=Moderator
 );

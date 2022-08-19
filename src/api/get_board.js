@@ -39,12 +39,12 @@ module.exports = async function(req, res) {
 	
 	// Find the number of threads, so we know how many pages there are.
 	let threadCount = await mysql.query(
-		`SELECT COUNT(1) FROM posts
+		`SELECT COUNT(1) AS c FROM posts
 		WHERE board_code=? AND parent_post_id=0`,
 		[boardCode]
 	);
 	console.log("Thread count:", threadCount);
-	let pageCount = Math.ceil(threadCount[0]["COUNT(1)"] / PAGE_SIZE);
+	let pageCount = Math.ceil(threadCount[0]["c"] / PAGE_SIZE);
 	if (pageCount === 0) {
 		pageCount = 1;
 	}

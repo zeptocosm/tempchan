@@ -77,6 +77,7 @@ div.formValue:last-child {
 	margin-left: 10px;
 	margin-right: 10px;
 	text-align: justify;
+	overflow-wrap: break-word;
 }
 #fullThread .post {
 	padding: 5px;
@@ -192,7 +193,7 @@ div.formValue:last-child {
 	margin-right: auto;
 }
 #modModalInner {
-	width: min(40%,500px);
+	width: min(500px,90%);
 	top: 150px;
 }
 #modPanel {
@@ -501,13 +502,11 @@ const boardKeyFromReadingKey = function(readingKey) {
 
 let currentBoardCode = ""; // global
 
-const SECRET_KEY_LENGTH = 22; // Deprecated
-const ROOT_KEY_LENGTH = SECRET_KEY_LENGTH;
-const BOARD_CODE_LENGTH = 3; // Deprecated
+const ROOT_KEY_LENGTH = 22;
 const READING_AFFIX = "r";
-const READING_KEY_LENGTH = SECRET_KEY_LENGTH+1;
+const READING_KEY_LENGTH = ROOT_KEY_LENGTH+1;
 const WRITING_AFFIX = "w";
-const WRITING_KEY_LENGTH = SECRET_KEY_LENGTH+2;
+const WRITING_KEY_LENGTH = ROOT_KEY_LENGTH+2;
 const BOARD_AFFIX = "b";
 const BOARD_KEY_LENGTH = 10;
 const OWNER_KEY_LENGTH = 16;
@@ -565,6 +564,9 @@ const addMyBoard = function(boardSlug, title, expirationDateMs) {
 	} else if (boardSlug.length === READING_KEY_LENGTH) {
 		rootKey = "";
 		readingKey = boardSlug;
+	} else {
+		console.log("Error!");
+		return;
 	}
 
 	let shouldAdd = true;
@@ -572,10 +574,7 @@ const addMyBoard = function(boardSlug, title, expirationDateMs) {
 		let entry = myBoards[i];
 		// entry is superseded by boardSlug if entry is read-only,
 		// boardSlug is not, and they both refer to the same board.
-		let superseded = rootKey &&
-			!entry.rootKey &&
-			entry.readingKey && // TODO: remove old-style
-			entry.readingKey === readingKey;
+		let superseded = rootKey && !entry.rootKey && entry.readingKey === readingKey;
 		if (!superseded) {
 			if (entry.boardSlug === boardSlug || // entry is the same link as the new link
 				entry.rootKey && readingKey && entry.readingKey === readingKey) { // entry itself supersedes the new link
@@ -608,7 +607,6 @@ const deriveKeys = function(boardSlug, wantWriteableLinkFromHistory) {
 	let secretKey;
 	let boardCode;
 	let readOnly = false;
-	let oldStyle = false; // TODO: remove
 
 	let writingKey;
 	let writeableLinkFromHistory;
@@ -626,14 +624,8 @@ const deriveKeys = function(boardSlug, wantWriteableLinkFromHistory) {
 		if (wantWriteableLinkFromHistory) {
 			writeableLinkFromHistory = getWriteableLinkFromHistory(boardSlug);
 		}
-	} else if (boardSlug.length === SECRET_KEY_LENGTH + BOARD_CODE_LENGTH) {
-		// old-style (TODO: remove)
-		secretKey = boardSlug.substring(0, boardSlug.length-BOARD_CODE_LENGTH);
-		boardCode = boardSlug.substring(boardSlug.length-BOARD_CODE_LENGTH);
-		oldStyle = true;
 	}
-
-	return {secretKey, boardCode, readOnly, oldStyle, writingKey, writeableLinkFromHistory};
+	return {secretKey, boardCode, readOnly, writingKey, writeableLinkFromHistory};
 };
 
 const toggleModerationExplanation = function() {
@@ -669,7 +661,7 @@ const createBoard = function() {
 		return;
 	}
 
-	let rootKey = secureRandomString(SECRET_KEY_LENGTH);
+	let rootKey = secureRandomString(ROOT_KEY_LENGTH);
 	let readingKey = readingKeyFromRootKey(rootKey);
 	let boardKey = boardKeyFromReadingKey(readingKey);
 	let writingKey = writingKeyFromRootKey(rootKey);
@@ -944,7 +936,7 @@ const stopCountdown = function() {
 }
 
 const showBoard = function(boardSlug, pageNum) {
-	let {secretKey, boardCode, writingKey, readOnly, oldStyle, writeableLinkFromHistory} =
+	let {secretKey, boardCode, writingKey, readOnly, writeableLinkFromHistory} =
 		deriveKeys(boardSlug, true/*wantWriteableLinkFromHistory*/);
 				
 	httpGet("/api/get_board?board_code=" +
@@ -981,14 +973,12 @@ const showBoard = function(boardSlug, pageNum) {
 		document.getElementById("boardPage").classList[readOnly ? "add" : "remove"]("readOnly");
 
 		let otherAccessLinkText = "";
-		if (!oldStyle) {
-			if (!readOnly) {
-				otherAccessLinkText = "Read-only link";
-				document.getElementById("otherAccessLink").href = "#" + secretKey;
-			} else if (writeableLinkFromHistory) {
-				otherAccessLinkText = "Writeable link";
-				document.getElementById("otherAccessLink").href = "#" + writeableLinkFromHistory;
-			}
+		if (!readOnly) {
+			otherAccessLinkText = "Read-only link";
+			document.getElementById("otherAccessLink").href = "#" + secretKey;
+		} else if (writeableLinkFromHistory) {
+			otherAccessLinkText = "Writeable link";
+			document.getElementById("otherAccessLink").href = "#" + writeableLinkFromHistory;
 		}
 		document.getElementById("otherAccessLink").innerText = otherAccessLinkText;
 		document.getElementById("otherAccessLinkSpan").classList[otherAccessLinkText ? "remove" : "add"]("hidden");
@@ -1492,14 +1482,10 @@ const findBoardSlug = function(boardCode) {
 	let myBoards = JSON.parse(window.localStorage.getItem(MY_BOARDS_LS_KEY) || "[]");
 	for (let i=0; i<myBoards.length; i++) {
 		let entry = myBoards[i];
-		if (boardCode.length === BOARD_CODE_LENGTH && // old-style (TODO: remove)
-				entry.boardSlug.endsWith(boardCode) ||
-			boardCode.length === BOARD_KEY_LENGTH && ( // new-style
-					entry.boardSlug.length === ROOT_KEY_LENGTH && // (writeable)
-						boardKeyFromReadingKey(readingKeyFromRootKey(entry.boardSlug)) === boardCode ||
-					entry.boardSlug.length === READING_KEY_LENGTH && // (read-only)
-						boardKeyFromReadingKey(entry.boardSlug) === boardCode
-				)
+		if (entry.boardSlug.length === ROOT_KEY_LENGTH && // writeable
+				boardKeyFromReadingKey(readingKeyFromRootKey(entry.boardSlug)) === boardCode ||
+			entry.boardSlug.length === READING_KEY_LENGTH && // read-only
+				boardKeyFromReadingKey(entry.boardSlug) === boardCode
 			) {
 			return entry.boardSlug;
 		}
@@ -1524,9 +1510,7 @@ const handleHash = function(oldHash) {
 			} else {
 				window.location.replace("");
 			}
-		} else if (splitHash[0].length === BOARD_KEY_LENGTH || // new-style
-			splitHash[0].length === BOARD_CODE_LENGTH // old-style (TODO: remove)
-			) {
+		} else if (splitHash[0].length === BOARD_KEY_LENGTH) {
 			// Redirect from RSS link
 			let boardSlugFromHistory = findBoardSlug(splitHash[0]);
 			if (boardSlugFromHistory) {
@@ -1537,9 +1521,8 @@ const handleHash = function(oldHash) {
 			} else {
 				showIncompleteLink();
 			}
-		} else if (splitHash[0].length === ROOT_KEY_LENGTH || // new-style (writeable)
-				splitHash[0].length === READING_KEY_LENGTH || // new-style (read-only)
-				splitHash[0].length === SECRET_KEY_LENGTH + BOARD_CODE_LENGTH // old-style (TODO: remove)
+		} else if (splitHash[0].length === ROOT_KEY_LENGTH || // writeable
+				splitHash[0].length === READING_KEY_LENGTH    // read-only
 				) {
 			// Board or thread view
 			let boardSlug = splitHash[0];

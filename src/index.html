@@ -20,7 +20,7 @@ body.fadeout {
 	opacity: 0;
 }
 
-h1, #homePage>p, #myBoardsDiv, #myBoardsDiv *, #loadingPage *, #badLinkPage *, #incompleteLinkPage * {
+h1, #homePage>p, #myLinksDiv, #myLinksDiv *, #loadingPage *, #badLinkPage *, #incompleteLinkPage * {
 	text-align: center;
 }
 
@@ -38,6 +38,19 @@ button, label, input[type="checkbox"] {
 	margin-left: auto;
 	margin-right: auto;
 }
+#creationForm h2 {
+	display: inline-block;
+	color: #aaa;
+	cursor: pointer;
+}
+#creationForm h2:hover {
+	text-decoration: underline;
+}
+#creationForm h2.selected {
+	text-decoration: underline;
+	color: black;
+	cursor: default;
+}
 div.formValue {
 	margin-bottom: 10px;
 }
@@ -53,10 +66,14 @@ div.formValue:last-child {
 	color: red;
 }
 
-#boardPage, #threadPage, #badLinkPage, #incompleteLinkPage {
+#boardPage, #threadPage, #dirPage, #badLinkPage, #incompleteLinkPage {
 	margin-left: 2%;
 	margin-right: 2%;
 	max-width: 960px;
+}
+
+.board p {
+	margin-left: 30px;
 }
 
 .thread {
@@ -116,17 +133,18 @@ div.formValue:last-child {
 }
 .readOnly #newThreadContainer,
 .readOnly #newPostContainer,
-.readOnly .mentioner {
+.readOnly .mentioner,
+.readOnly #newDirEntryContainer {
 	display: none;
 }
 
-#myBoardsDiv h3 {
+#myLinksDiv h3 {
 	display: inline;
 }
-#myBoardsDiv h3, #myBoardsList a {
+#myLinksDiv h3, #myLinksList a {
 	margin-right: 10px;
 }
-#myBoardsDiv sup {
+#myLinksDiv sup {
 	font-variant: small-caps;
 }
 
@@ -147,16 +165,16 @@ div.formValue:last-child {
 	clear: both;
 }
 
-#readOnlyMarker, #threadReadOnlyMarker, .writersOnlyMarker {
+#readOnlyMarker, #threadReadOnlyMarker, #dirReadOnlyMarker, .writersOnlyMarker {
 	font-variant: small-caps;
 	line-height: 0;
 	cursor: help;
 	text-decoration: underline;
 }
-#readOnlyMarker, #threadReadOnlyMarker {
+#readOnlyMarker, #threadReadOnlyMarker, #dirReadOnlyMarker {
 	display: none;
 }
-.readOnly #readOnlyMarker, .readOnly #threadReadOnlyMarker {
+.readOnly #readOnlyMarker, .readOnly #threadReadOnlyMarker, .readOnly #dirReadOnlyMarker {
 	display: inline;
 }
 
@@ -229,17 +247,18 @@ div.formValue:last-child {
 <p class="error" id="noscriptWarning">Tempchan requires JavaScript to run, in order to encrypt and decrypt messages in your web browser.</p>
 <script>document.getElementById("noscriptWarning").style = "display:none";</script>
 
-<div id="myBoardsDiv" class="hidden"><p>
-<h3>My boards:</h3>
-<span id="myBoardsList"></span>
-<button onclick="clearMyBoards()">Clear</button>
+<div id="myLinksDiv" class="hidden"><p>
+<h3>My links:</h3>
+<span id="myLinksList"></span>
+<button onclick="clearMyLinks()">Clear</button>
 </p></div>
 
 <div id="creationForm">
 
-<h2>Create a new board</h2>
+<h2 id="createBoardHeader" onclick="toggleCreationForm(this)" class="selected">Create a new board</h2>
+<h2 id="createDirectoryHeader" onclick="toggleCreationForm(this)" style="margin-left: 20px;">Create a new directory</h2>
 
-<div>
+<div id="createBoardForm">
 <div class="formValue">
 	<div><b>Title</b></div>
 	<div>(max 100 characters)</div>
@@ -267,8 +286,6 @@ div.formValue:last-child {
 	</select></div>
 </div>
 
-</div>
-
 <ul>
 	<li>Once the board is created, these settings cannot be changed. You will be taken to the board's <b>writeable link</b>, which you can share with others to invite them to post on it.</li>
 	<li id="unmoderatedExplanation">Posts cannot be deleted once submitted.</li>
@@ -278,6 +295,21 @@ div.formValue:last-child {
 </ul>
 
 <button id="createBoardButton" onclick="createBoard()">Create board and take me there</button>
+
+</div> <!--createBoardForm-->
+
+<div id="createDirectoryForm" class="hidden">
+
+<ul style="margin-top: 0">
+	<li>Create a <b>directory</b> to save and share links to multiple boards. (<a href="/about.html#what-are-directories-and-how-do-they-work" target="_blank" rel="noopener noreferrer">Learn more</a>)</li>
+	<li>Once you create the directory, you can start adding boards to it. Share its <b>writeable link</b> to invite others to do the same.</li>
+	<li>The directory will also have a <b>read-only link</b>, which lets people see the boards in the directory, but not add new ones.</li>
+	<li>The directory will remain active as long as <b>any</b> of its listed boards are still active. You can maintain the directory indefinitely by continually adding new boards to it.</li>
+</ul>
+
+<button id="createDirectoryButton" onclick="createDirectory()">Create directory and take me there</button>
+
+</div> <!-- createDirectoryForm -->
 
 </div>
 
@@ -327,6 +359,27 @@ div.formValue:last-child {
 <div id="paginationBottom" class="pagination"></div>
 
 </div> <!-- boardPage -->
+
+
+<div id="dirPage" class="hidden">
+
+<h1><a href="#">Tempchan</a> | <span id="dirTitle"></span><sup id="dirReadOnlyMarker" title="You are viewing this directory via its read-only link; you can only add boards if you have the writeable link.">ro</sup></h1>
+
+<h3 style="text-align: center">Time till deletion: <span id="dirDeletionCountdown"></span><br/>
+<a href="" onclick="showQR(); return false">QR</a>
+<span id="dirOtherAccessLinkSpan"> &middot; <a id="dirOtherAccessLink" href=""></a></span>
+</h3>
+
+<div id="newDirEntryContainer">
+<input type="text" id="newDirEntryText" style="width: 400px" /><br/>
+<button id="newDirEntryButton" onclick="newDirEntry()">Add board</button>
+</div>
+
+<hr/>
+
+<div id="boardsView"></div>
+
+</div> <!-- dirPage -->
 
 
 <div id="threadPage" class="hidden">
@@ -457,6 +510,16 @@ const decrypt = function(key, ciphertext) {
 const ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const BITS_PER_CHAR = Math.ceil(Math.log(ALPHABET.length)/Math.log(2));
 
+const validateAlphabet = function(string) {
+	for (let i=0; i<string.length; i++) {
+		let c = string.charAt(i);
+		if (ALPHABET.indexOf(c) === -1) {
+			return false;
+		}
+	}
+	return true;
+};
+
 const secureRandomString = function(length) {
 	let string = "";
 	for (let i=0; i<length; i++) {
@@ -490,14 +553,28 @@ const hashToString = function(input, affix, outputLength) {
 	return output;
 };
 
+const dirDisplayTitle = function(dirCode) {
+	let sum = 0;
+	for (let i=0; i<dirCode.length; i++) {
+		let c = dirCode[i];
+		sum += ALPHABET.indexOf(c);
+		sum *= ALPHABET.length;
+		sum %= 1000000;
+	}
+	return "Directory " + sum;
+};
+
 const readingKeyFromRootKey = function(rootKey) {
-	return hashToString(rootKey, READING_AFFIX, READING_KEY_LENGTH);
+	let isDir = rootKey.length === DIR_ROOT_KEY_LENGTH;
+	return hashToString(rootKey, READING_AFFIX, isDir ? DIR_READING_KEY_LENGTH : READING_KEY_LENGTH);
 }
 const writingKeyFromRootKey = function(rootKey) {
-	return hashToString(rootKey, WRITING_AFFIX, WRITING_KEY_LENGTH);
+	let isDir = rootKey.length === DIR_ROOT_KEY_LENGTH;
+	return hashToString(rootKey, WRITING_AFFIX, isDir ? DIR_WRITING_KEY_LENGTH : WRITING_KEY_LENGTH);
 }
-const boardKeyFromReadingKey = function(readingKey) {
-	return hashToString(readingKey, BOARD_AFFIX, BOARD_KEY_LENGTH);
+const boardOrDirKeyFromReadingKey = function(readingKey) {
+	let isDir = readingKey.length === DIR_READING_KEY_LENGTH;
+	return hashToString(readingKey, BOARD_OR_DIR_AFFIX, isDir ? DIR_KEY_LENGTH : BOARD_KEY_LENGTH);
 }
 
 let currentBoardCode = ""; // global
@@ -507,28 +584,34 @@ const READING_AFFIX = "r";
 const READING_KEY_LENGTH = ROOT_KEY_LENGTH+1;
 const WRITING_AFFIX = "w";
 const WRITING_KEY_LENGTH = ROOT_KEY_LENGTH+2;
-const BOARD_AFFIX = "b";
+const BOARD_OR_DIR_AFFIX = "b";
 const BOARD_KEY_LENGTH = 10;
 const OWNER_KEY_LENGTH = 16;
 
+const DIR_ROOT_KEY_LENGTH = 20;
+const DIR_READING_KEY_LENGTH = DIR_ROOT_KEY_LENGTH+1;
+const DIR_WRITING_KEY_LENGTH = DIR_ROOT_KEY_LENGTH+2;
+const DIR_KEY_LENGTH = 11;
+
 const MY_BOARDS_LS_KEY = "myBoards";
 
-const refreshMyBoards = function() {
+const refreshMyLinks = function() {
 	let myBoards = JSON.parse(window.localStorage.getItem(MY_BOARDS_LS_KEY) || "[]");
-	let listElement = document.getElementById("myBoardsList");
-	let divElement = document.getElementById("myBoardsDiv");
+	let listElement = document.getElementById("myLinksList");
+	let divElement = document.getElementById("myLinksDiv");
 	if (myBoards.length) {
 		let unexpiredCount = 0;
 		let listHtml = "";
 		let now = +new Date();
 		for (let i=0; i<myBoards.length; i++) {
 			let entry = myBoards[i];
-			if (entry.expirationDateMs > now) {
+			if (!entry.expirationDateMs || entry.expirationDateMs > now) {
 				unexpiredCount++;
-				let readOnly = entry.boardSlug.length === READING_KEY_LENGTH;
+				let readOnly = entry.boardSlug.length === READING_KEY_LENGTH || entry.boardSlug.length === DIR_READING_KEY_LENGTH;
+				let isDir = entry.boardSlug.length === DIR_ROOT_KEY_LENGTH || entry.boardSlug.length === DIR_READING_KEY_LENGTH;
 				listHtml += (
-					'<a href="/#' + entry.boardSlug + '">' +
-					entry.title +
+					'<a href="/#' + (isDir ? "d/" : "") + entry.boardSlug + '">' +
+					(isDir ? dirDisplayTitle(entry.title) : entry.title) +
 					(readOnly ? '<sup>ro</sup>' : '') +
 					'</a> '
 				);
@@ -543,27 +626,28 @@ const refreshMyBoards = function() {
 	listElement.innerText = "";
 	divElement.classList.add("hidden");
 };
-refreshMyBoards(); // Show on initial homepage load
+refreshMyLinks(); // Show on initial homepage load
 
-const clearMyBoards = function() {
-	if (confirm("Are you sure? You will lose access to these boards if you have not saved their links elsewhere.")) {
+const clearMyLinks = function() {
+	if (confirm("Are you sure? You will lose access to these links if you have not saved them elsewhere.")) {
 		window.localStorage.clear();
-		refreshMyBoards();
+		refreshMyLinks();
 	}
 };
 
-const addMyBoard = function(boardSlug, title, expirationDateMs) {
+const addMyLink = function(slug, title, expirationDateMs) {
+	// TODO: rename this
 	let myBoards = JSON.parse(window.localStorage.getItem(MY_BOARDS_LS_KEY) || "[]");
 	let myBoardsNew = [];
 
 	let rootKey;
 	let readingKey;
-	if (boardSlug.length === ROOT_KEY_LENGTH) {
-		rootKey = boardSlug;
+	if (slug.length === ROOT_KEY_LENGTH || slug.length === DIR_ROOT_KEY_LENGTH) {
+		rootKey = slug;
 		readingKey = readingKeyFromRootKey(rootKey);
-	} else if (boardSlug.length === READING_KEY_LENGTH) {
+	} else if (slug.length === READING_KEY_LENGTH || slug.length === DIR_READING_KEY_LENGTH) {
 		rootKey = "";
-		readingKey = boardSlug;
+		readingKey = slug;
 	} else {
 		console.log("Error!");
 		return;
@@ -572,23 +656,48 @@ const addMyBoard = function(boardSlug, title, expirationDateMs) {
 	let shouldAdd = true;
 	for (let i=0; i<myBoards.length; i++) {
 		let entry = myBoards[i];
-		// entry is superseded by boardSlug if entry is read-only,
-		// boardSlug is not, and they both refer to the same board.
+		// entry is superseded by slug if entry is read-only,
+		// slug is not, and they both refer to the same board.
 		let superseded = rootKey && !entry.rootKey && entry.readingKey === readingKey;
 		if (!superseded) {
-			if (entry.boardSlug === boardSlug || // entry is the same link as the new link
+			if (entry.boardSlug === slug || // entry is the same link as the new link
 				entry.rootKey && readingKey && entry.readingKey === readingKey) { // entry itself supersedes the new link
 				shouldAdd = false;
 			}
-			if (entry.expirationDateMs > +new Date()) {
+			if (!entry.expirationDateMs || entry.expirationDateMs > +new Date()) {
 				myBoardsNew.push(entry);
 			}
 		}
 	}
 	if (shouldAdd) {
+		let boardSlug = slug;
 		myBoardsNew.push({boardSlug, title, expirationDateMs, rootKey, readingKey});
 	}
 	
+	window.localStorage.setItem(MY_BOARDS_LS_KEY, JSON.stringify(myBoardsNew));
+};
+
+const removeMyLink = function(slug) {
+	// TODO: rename this
+	let myBoards = JSON.parse(window.localStorage.getItem(MY_BOARDS_LS_KEY) || "[]");
+	let myBoardsNew = [];
+
+	let readingKey;
+	if (slug.length === ROOT_KEY_LENGTH || slug.length === DIR_ROOT_KEY_LENGTH) {
+		readingKey = readingKeyFromRootKey(slug);
+	} else if (slug.length === READING_KEY_LENGTH || slug.length === DIR_READING_KEY_LENGTH) {
+		readingKey = slug;
+	} else {
+		console.log("Error!");
+		return;
+	}
+
+	for (let i=0; i<myBoards.length; i++) {
+		let entry = myBoards[i];
+		if (entry.readingKey !== readingKey) {
+			myBoardsNew.push(entry);
+		}
+	}
 	window.localStorage.setItem(MY_BOARDS_LS_KEY, JSON.stringify(myBoardsNew));
 };
 
@@ -603,26 +712,26 @@ const getWriteableLinkFromHistory = function(readingKey) {
 	return "";
 };
 
-const deriveKeys = function(boardSlug, wantWriteableLinkFromHistory) {
+const deriveKeys = function(slug, wantWriteableLinkFromHistory) {
 	let secretKey;
-	let boardCode;
+	let boardCode; // TODO rename this
 	let readOnly = false;
 
 	let writingKey;
 	let writeableLinkFromHistory;
 
-	if (boardSlug.length === ROOT_KEY_LENGTH) {
-		// new-style (writeable)
-		secretKey = readingKeyFromRootKey(boardSlug);
-		boardCode = boardKeyFromReadingKey(secretKey);
-		writingKey = writingKeyFromRootKey(boardSlug);
-	} else if (boardSlug.length === READING_KEY_LENGTH) {
-		// new-style (read-only)
-		secretKey = boardSlug;
-		boardCode = boardKeyFromReadingKey(secretKey);
+	if (slug.length === ROOT_KEY_LENGTH || slug.length === DIR_ROOT_KEY_LENGTH) {
+		// writeable
+		secretKey = readingKeyFromRootKey(slug);
+		boardCode = boardOrDirKeyFromReadingKey(secretKey);
+		writingKey = writingKeyFromRootKey(slug);
+	} else if (slug.length === READING_KEY_LENGTH || slug.length === DIR_READING_KEY_LENGTH) {
+		// read-only
+		secretKey = slug;
+		boardCode = boardOrDirKeyFromReadingKey(secretKey);
 		readOnly = true;
 		if (wantWriteableLinkFromHistory) {
-			writeableLinkFromHistory = getWriteableLinkFromHistory(boardSlug);
+			writeableLinkFromHistory = getWriteableLinkFromHistory(slug);
 		}
 	}
 	return {secretKey, boardCode, readOnly, writingKey, writeableLinkFromHistory};
@@ -633,6 +742,27 @@ const toggleModerationExplanation = function() {
 	document.getElementById("unmoderatedExplanation").classList[moderated ? "add" : "remove"]("hidden");
 	document.getElementById("moderatedExplanation").classList[moderated ? "remove" : "add"]("hidden");
 }
+
+const toggleCreationForm = function(header) {
+	let createBoardHeader = document.getElementById("createBoardHeader");
+	let createDirHeader = document.getElementById("createDirectoryHeader");
+	let createBoardForm = document.getElementById("createBoardForm");
+	let createDirForm = document.getElementById("createDirectoryForm");
+	if (header.classList.contains("selected")) {
+		return;
+	}
+	if (header === createDirHeader) {
+		createDirHeader.classList.add("selected");
+		createDirForm.classList.remove("hidden");
+		createBoardHeader.classList.remove("selected");
+		createBoardForm.classList.add("hidden");
+	} else {
+		createBoardHeader.classList.add("selected");
+		createBoardForm.classList.remove("hidden");
+		createDirHeader.classList.remove("selected");
+		createDirForm.classList.add("hidden");
+	}
+};
 
 const createBoard = function() {
 	let title = document.getElementById("newBoardTitle").value.trim() || "(Untitled)";
@@ -663,7 +793,7 @@ const createBoard = function() {
 
 	let rootKey = secureRandomString(ROOT_KEY_LENGTH);
 	let readingKey = readingKeyFromRootKey(rootKey);
-	let boardKey = boardKeyFromReadingKey(readingKey);
+	let boardKey = boardOrDirKeyFromReadingKey(readingKey);
 	let writingKey = writingKeyFromRootKey(rootKey);
 	let ownerKey = "";
 	if (moderated) {
@@ -691,6 +821,29 @@ const createBoard = function() {
 			}
 		} else {
 			alert("Error creating board! " + JSON.stringify(response));
+		}
+		button.disabled = null;
+	});
+};
+
+
+const createDirectory = function() {
+	let dirRootKey = secureRandomString(DIR_ROOT_KEY_LENGTH);
+	let dirReadingKey = readingKeyFromRootKey(dirRootKey);
+	let dirKey = boardOrDirKeyFromReadingKey(dirReadingKey);
+	let dirWritingKey = writingKeyFromRootKey(dirRootKey);
+
+	let button = document.getElementById("createDirectoryButton");
+	button.disabled = true;
+
+	httpPost("/api/create_directory", {
+		dir_key: dirKey,
+		dir_writing_key: dirWritingKey,
+	}, function(response) {
+		if (response.ok) {
+			window.location.hash = "d/" + dirRootKey;
+		} else {
+			alert("Error creating directory! " + JSON.stringify(response));
 		}
 		button.disabled = null;
 	});
@@ -823,6 +976,7 @@ const clearForms = function() {
 	document.getElementById("postReplyWo").checked = null;
 	document.getElementById("postAsName").selectedIndex = 0;
 	document.getElementById("replyAsName").selectedIndex = 0;
+	document.getElementById("newDirEntryText").value = "";
 	clearErrors();
 }
 
@@ -838,7 +992,8 @@ const PAGES = [
 	"incompleteLinkPage",
 	"homePage",
 	"boardPage",
-	"threadPage"
+	"threadPage",
+	"dirPage"
 ];
 
 const hideAllBut = function(pageToShow) {
@@ -866,6 +1021,16 @@ const AUTHOR_NAMES = [
 	"Anonymous",
 	"Moderator"
 ];
+
+const BOARD_ON_DIRECTORY_TEMPLATE =
+`<div class="board">
+<a href="/#{{boardSlug}}"><b>{{title}}</b></a>
+&middot;
+{{remarks}}
+&middot;
+Time till deletion: <span title="{{deletionTimestamp}}">{{deletionCountdown}}</span>
+{{description}}
+</div>`;
 
 const THREAD_ON_BOARD_TEMPLATE = 
 `<div class="thread">
@@ -935,6 +1100,110 @@ const stopCountdown = function() {
 	}
 }
 
+const showDir = function(dirSlug) {
+	let {secretKey, boardCode, writingKey, readOnly, writeableLinkFromHistory} =
+		deriveKeys(dirSlug, true/*wantWriteableLinkFromHistory*/);
+	let dirCode = boardCode;
+	httpGet("/api/get_directory?dir_code=" + encodeURIComponent(dirCode), function(response) {
+		if (!response.ok) {
+			if (response.status === 404) {
+				removeMyLink(dirSlug);
+				showBadLink();
+			} else {
+				alert("Error getting directory! " + JSON.stringify(response));
+			}
+			return;
+		}
+		currentBoardCode = "";
+		let resObj = JSON.parse(response.responseText);
+		let boards = resObj.boards;
+
+		addMyLink(dirSlug, dirCode);
+
+		let now = new Date();
+		let boardsHtml = "";
+		let lastBoardDeletionTimestamp = 0;
+		for (let i=0; i<boards.length; i++) {
+			let board = boards[i];
+
+			let boardSlugCt = board.board_slug_ct;
+			let boardSlug = decrypt(secretKey, boardSlugCt).trim();
+
+			if (!validateAlphabet(boardSlug) || !(
+					boardSlug.length === ROOT_KEY_LENGTH ||
+					boardSlug.length === READING_KEY_LENGTH
+					)) {
+				console.log("Warning: Directory contains '" + boardSlug + "' which is an invalid board slug");
+				continue;
+			}
+
+			let boardKeys = deriveKeys(boardSlug, false/*wantWriteableLinkFromHistory*/);
+			let boardSecretKey = boardKeys.secretKey;
+			let boardReadOnly = boardKeys.readOnly;
+
+			let boardTitle = decrypt(boardSecretKey, board.title_ct);
+			let boardDescription = decrypt(boardSecretKey, board.description_ct);
+			let escapedBoardTitle = boardTitle
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;");
+			let boardTitlePlaceholder = secureRandomString(50); // TODO get rid of this ugly hack
+			escapedBoardTitle.replaceAll("{{description}}", boardTitlePlaceholder);
+
+			let expirationDateMs = board.expiration_date_ms;
+			let timeTillDeletionMs = expirationDateMs - now;
+			lastBoardDeletionTimestamp = Math.max(lastBoardDeletionTimestamp, expirationDateMs);
+
+			let remarks = [boardReadOnly ? "read-only" : "writeable"];
+			if (board.moderated) {
+				remarks.push("moderated");
+			}
+			let remarksText = remarks.join(", ");
+
+			let boardHtml = BOARD_ON_DIRECTORY_TEMPLATE
+				.replaceAll("{{boardSlug}}", boardSlug)
+				.replaceAll("{{deletionTimestamp}}", formatTimestamp(expirationDateMs))
+				.replaceAll("{{deletionCountdown}}", formatDuration(timeTillDeletionMs))
+				.replaceAll("{{remarks}}", remarksText)
+				.replaceAll("{{title}}", escapedBoardTitle)
+				.replaceAll("{{description}}", renderText(boardDescription))
+				.replaceAll(boardTitlePlaceholder, "{{description}}");
+			boardsHtml += boardHtml;
+		}
+		document.getElementById("boardsView").innerHTML = boardsHtml;
+
+		clearForms();
+
+		// Set headings
+		let displayTitle = dirDisplayTitle(dirCode);
+		document.getElementById("htmlTitle").innerText = displayTitle + " : Tempchan" + (readOnly ? " [read-only]" : "");
+		document.getElementById("dirTitle").innerText = displayTitle;
+		if (lastBoardDeletionTimestamp) {
+			document.getElementById("dirDeletionCountdown").innerText = formatDuration(lastBoardDeletionTimestamp - now);
+			document.getElementById("dirDeletionCountdown").title = formatTimestamp(lastBoardDeletionTimestamp);
+		} else {
+			document.getElementById("dirDeletionCountdown").innerText = "soon";
+			document.getElementById("dirDeletionCountdown").removeAttribute("title");
+		}
+		document.getElementById("newDirEntryText").placeholder = LINK_PREFIX + "..."
+		
+		let otherAccessLinkText = "";
+		if (!readOnly) {
+			otherAccessLinkText = "Read-only link";
+			document.getElementById("dirOtherAccessLink").href = "#d/" + secretKey;
+		}/* else if (writeableLinkFromHistory) { // TODO
+			otherAccessLinkText = "Writeable link";
+			document.getElementById("otherAccessLink").href = "#" + writeableLinkFromHistory;
+		}*/
+		document.getElementById("dirOtherAccessLink").innerText = otherAccessLinkText;
+		document.getElementById("dirOtherAccessLinkSpan").classList[otherAccessLinkText ? "remove" : "add"]("hidden");
+
+		document.getElementById("dirPage").classList[readOnly ? "add" : "remove"]("readOnly");
+
+		hideAllBut("dirPage");
+	});
+};
+
 const showBoard = function(boardSlug, pageNum) {
 	let {secretKey, boardCode, writingKey, readOnly, writeableLinkFromHistory} =
 		deriveKeys(boardSlug, true/*wantWriteableLinkFromHistory*/);
@@ -964,7 +1233,7 @@ const showBoard = function(boardSlug, pageNum) {
 		let title = decrypt(secretKey, titleCt);
 		let description = decrypt(secretKey, descriptionCt);
 
-		addMyBoard(boardSlug, title, expirationDateMs);
+		addMyLink(boardSlug, title, expirationDateMs);
 
 		document.getElementById("htmlTitle").innerText = title + " : Tempchan" + (readOnly ? " [read-only]" : "");
 		document.getElementById("boardTitle").innerText = title;
@@ -1127,7 +1396,7 @@ const setOwnerKeyInHistory = function(boardCode, setOwnerKey) {
 	for (let i=0; i<myBoards.length; i++) {
 		let entry = myBoards[i];
 		// Assume this won't be done for read-only boards
-		if (boardKeyFromReadingKey(readingKeyFromRootKey(entry.boardSlug)) === boardCode) {
+		if (boardOrDirKeyFromReadingKey(readingKeyFromRootKey(entry.boardSlug)) === boardCode) {
 			entry.ownerKey = setOwnerKey;
 			window.localStorage.setItem(MY_BOARDS_LS_KEY, JSON.stringify(myBoards));
 			return;
@@ -1140,7 +1409,7 @@ const getOwnerKeyFromHistory = function(boardCode) {
 	for (let i=0; i<myBoards.length; i++) {
 		let entry = myBoards[i];
 		// Assume this won't be done for read-only boards
-		if (boardKeyFromReadingKey(readingKeyFromRootKey(entry.boardSlug)) === boardCode) {
+		if (boardOrDirKeyFromReadingKey(readingKeyFromRootKey(entry.boardSlug)) === boardCode) {
 			return entry.ownerKey || "";
 		}
 	}
@@ -1184,7 +1453,7 @@ const showThread = function(boardSlug, opId, highlitPost) {
 		let isModerated = board.moderated;
 		let boardTitle = decrypt(secretKey, board.title_ct);
 		let expirationDateMs = board.expiration_date_ms;
-		addMyBoard(boardSlug, boardTitle, expirationDateMs);
+		addMyLink(boardSlug, boardTitle, expirationDateMs);
 
 		document.getElementById("htmlTitle").innerText =
 			boardTitle + " | #" + opId + " : Tempchan" + (readOnly ? " [read-only]" : "");
@@ -1426,8 +1695,57 @@ const showHome = function() {
 	currentBoardCode = "";
 	clearForms();
 	document.getElementById("htmlTitle").innerText = "Tempchan : throwaway discussion boards";
-	refreshMyBoards();
+	refreshMyLinks();
 	hideAllBut("homePage");
+}
+
+
+const LINK_PREFIX = window.location.protocol + "//" + window.location.host + "/#";
+
+
+const newDirEntry = function() {
+	let text = document.getElementById("newDirEntryText").value.trim();
+	if (!text.length) {
+		return;
+	}
+	if (!text.startsWith(LINK_PREFIX)) {
+		alert("Must be a link to a Tempchan board starting with " + LINK_PREFIX);
+		return;
+	}
+	let boardSlug = text.substring(LINK_PREFIX.length);
+	if (!validateAlphabet(boardSlug) || !(boardSlug.length === ROOT_KEY_LENGTH || boardSlug.length === READING_KEY_LENGTH)) {
+		alert("Not a valid board link");
+		return;
+	}
+
+	let dirSlug = window.location.hash.substring(3);
+	let dirKeys = deriveKeys(dirSlug);
+	let dirCode = dirKeys.boardCode;
+	if (dirKeys.readOnly) {
+		alert("Cannot add a board from a read-only link");
+		return;
+	}
+	let boardCode = deriveKeys(boardSlug).boardCode;
+	let paddedBoardSlug = boardSlug + (boardSlug.length === ROOT_KEY_LENGTH ? " " : "");
+	let boardSlugCt = encrypt(dirKeys.secretKey, paddedBoardSlug);
+
+	let button = document.getElementById("newDirEntryButton");
+	button.disabled = true;
+
+	httpPost("/api/create_entry", {
+		dir_code: dirCode,
+		dir_writing_key: dirKeys.writingKey,
+		board_slug_ct: boardSlugCt,
+		board_code: boardCode
+	}, function(response) {
+		if (response.ok) {
+			window.location.reload();
+		} else {
+			alert("Error adding board! " + JSON.stringify(response));
+		}
+		button.disabled = null;
+	});
+	
 }
 
 
@@ -1483,9 +1801,9 @@ const findBoardSlug = function(boardCode) {
 	for (let i=0; i<myBoards.length; i++) {
 		let entry = myBoards[i];
 		if (entry.boardSlug.length === ROOT_KEY_LENGTH && // writeable
-				boardKeyFromReadingKey(readingKeyFromRootKey(entry.boardSlug)) === boardCode ||
+				boardOrDirKeyFromReadingKey(readingKeyFromRootKey(entry.boardSlug)) === boardCode ||
 			entry.boardSlug.length === READING_KEY_LENGTH && // read-only
-				boardKeyFromReadingKey(entry.boardSlug) === boardCode
+				boardOrDirKeyFromReadingKey(entry.boardSlug) === boardCode
 			) {
 			return entry.boardSlug;
 		}
@@ -1510,6 +1828,13 @@ const handleHash = function(oldHash) {
 			} else {
 				window.location.replace("");
 			}
+		} else if (splitHash.length === 2 &&
+				splitHash[0] === "d" && (
+					splitHash[1].length === DIR_ROOT_KEY_LENGTH || // writeable
+					splitHash[1].length === DIR_READING_KEY_LENGTH // read-only
+				)) {
+			showLoading();
+			showDir(splitHash[1]);
 		} else if (splitHash[0].length === BOARD_KEY_LENGTH) {
 			// Redirect from RSS link
 			let boardSlugFromHistory = findBoardSlug(splitHash[0]);

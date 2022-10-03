@@ -54,6 +54,7 @@ td:first-child {
 	</ul>
 	</li>
 	<li><a href="#how-does-moderation-work">How does moderation work?</a></li>
+	<li><a href="#what-are-directories-and-how-do-they-work">What are "directories" and how do they work?</a></li>
 	<li><a href="#how-does-the-rss-feed-work">How does the RSS feed work?</a></li>
 	<li><a href="#how-secure-is-tempchan">How secure is Tempchan?</a></li>
 	<li><a href="#is-tempchan-being-actively-worked-on">Is Tempchan being actively worked on?</a></li>
@@ -127,11 +128,22 @@ like this.</p></td>
 <p>Unless specified otherwise when created, Tempchan boards are <b>Unmoderated</b>. This means that the creator of a board has no special privileges over the other members. Keep this in mind when deciding whom to entrust with your board link!</p>
 <p>If a board is marked as <b>Moderated</b>, the creator can set posts as "hidden" as well as mark their own posts with the label "Moderator" (rather than the default "Anonymous"). Such hidden posts appear to others as <span class="redacted">[Hidden by moderator]</span>. However, the board creator still cannot ban people or edit the content of posts, the board title/description, or its lifespan.</p>
 
+<h2><a name="what-are-directories-and-how-do-they-work">What are "directories" and how do they work?</a></h2>
+<p>A <b>directory</b> is a list of board links. Unlike the boards themselves, a directory does not expire at a pre-set time&mdash;it stays up as long as <b>any</b> of its listed boards are still active. Therefore, a directory may survive indefinitely as long as people keep adding new boards to it.</p>
+<p>Directories are an easy way to continually share a collection of boards with the same group of people, without having to share a new link every time you create a new board. If you are given a directory link, you will always be able to access the directory at that link, even if all of the boards have been replaced with new ones since then.</p>
+<p>Other things to note about directories:
+<ul>
+<li>The same board may be listed under more than one directory.</li>
+<li>Adding a board to a directory <b>does not</b> create a link from the board back to the directory&mdash;the users of that board are not automatically given access to the directory or to its other boards.</li>
+<li>Unlike boards, directories do not have titles or descriptions. (Instead, they are referred to by a random number.)</li>
+<li>The board links listed in the directory may themselves be either writeable or read-only board links, separately from whether you are viewing the directory through <b>its</b> writeable or read-only link.</li>
+</ul></p>
+
 <h2><a name="how-does-the-rss-feed-work">How does the RSS feed work?</a></h2>
 <p>To be notified of new posts on a board, you can subscribe with your RSS reader of choice by way of the "RSS" link on the board's homepage. However, because all content is encrypted, the feed will only contain garbled text; in order to read the posts, you must separately load them in your browser. If you follow the links from the feed, you will be able to read the posts as long as the board's secret link is already in your history.</p>
 
 <h2><a name="how-secure-is-tempchan">How secure is Tempchan?</a></h2>
-<p>Tempchan is designed to disclose as little information as possible to the server. All posts, board titles, and board descriptions are encrypted locally using the key contained in the secret link, which means that nobody without that link&mdash;not even the server admins&mdash;can read them. The server only sees the date and time of each post, its approximate length, and how the posts are grouped into threads and boards. The secret links are never known by the server; no cookies or analytics are used.</p>
+<p>Tempchan is designed to disclose as little information as possible to the server. All posts, board titles, board descriptions, and board links added to directories are encrypted locally using the key contained in the secret link, which means that nobody without that link&mdash;not even the server admins&mdash;can read them. The server only sees the date and time of each post, its approximate length, and how the posts are grouped into threads and boards. (The server also sees which boards are linked from which directories, but not the secret board links themselves.) The secret links are never known by the server; no cookies or analytics are used.</p>
 
 <h2><a name="is-tempchan-being-actively-worked-on">Is Tempchan being actively worked on?</a></h2>
 <p>Yes! Several features are currently in the pipeline, such as moderation and board directories.</p>

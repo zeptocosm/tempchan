@@ -37,7 +37,19 @@ module.exports = async function(req, res) {
 			[expiredBoardCodes]
 		);
 		console.log("DELETE FROM boards:", deleteBoardsResult);
+
+		let deleteEntriesResult = await mysql.query(
+			"DELETE FROM entries WHERE board_code IN (" +expiredBoardCodes + ")",
+		);
+		console.log("DELETE FROM entries:", deleteEntriesResult);
 	}
+
+	let deleteDirsResult = await mysql.query(
+		`DELETE FROM directories AS dir
+		WHERE 0=(SELECT COUNT(1) FROM entries AS entry WHERE dir.dir_code = entry.dir_code)`
+	);
+	console.log("DELETE FROM directories:", deleteDirsResult);
+
 	mysql.end();
 	res.send("Success");
 };

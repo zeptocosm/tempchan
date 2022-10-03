@@ -18,3 +18,15 @@ CREATE TABLE IF NOT EXISTS posts (
 	mod_status INT, -- 0=Default, 1=Hidden
 	author INT -- 0=Anonymous, 1=Moderator
 );
+
+CREATE TABLE IF NOT EXISTS directories (
+	dir_code VARCHAR(11) NOT NULL PRIMARY KEY,
+	writing_key_hash VARCHAR(100)
+);
+
+CREATE TABLE IF NOT EXISTS entries (
+	dir_code VARCHAR(11) NOT NULL,
+	board_code VARCHAR(10) NOT NULL,
+	board_slug_ct VARCHAR(200) NOT NULL,
+	PRIMARY KEY (dir_code, board_code)
+);

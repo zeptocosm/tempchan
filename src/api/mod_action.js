@@ -58,7 +58,7 @@ module.exports = async function(req, res) {
 	
 	// Check to make sure the board exists and hasn't expired
 	let boardsResult = await mysql.query(
-		"SELECT * FROM boards WHERE board_code=? AND expiration_date_ms>?",
+		"SELECT * FROM boards WHERE board_code=? AND (expiration_date_ms=0 OR expiration_date_ms>?)",
 		[boardCode, now]
 	);
 	console.log("SELECT * FROM boards:", boardsResult);

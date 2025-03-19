@@ -26,22 +26,25 @@ const verifyPassword = function(password, storedPasswordHash) {
 const PAGE_SIZE = 10;
 
 module.exports = async function(req, res) {
+	let now = +new Date();
 	let boardCode = req.query.board_code;
 	let boards = await mysql.query(
-		"SELECT * FROM boards WHERE board_code=? AND expiration_date_ms>?",
-		[boardCode, +new Date()]
+		"SELECT * FROM boards WHERE board_code=? AND (expiration_date_ms=0 OR expiration_date_ms>?)",
+		[boardCode, now]
 	);
 	if (!boards.length) {
 		res.status(404).send("Board not found");
 		mysql.end()
 		return;
 	}
-	
+	let board = boards[0];
+	let isRolling = !!board.rolling_lifespan_ms;
+
 	// Find the number of threads, so we know how many pages there are.
 	let threadCount = await mysql.query(
 		`SELECT COUNT(1) AS c FROM posts
-		WHERE board_code=? AND parent_post_id=0`,
-		[boardCode]
+		WHERE board_code=? AND parent_post_id=0` + (isRolling ? " AND timestamp_ms>?" : ""),
+		isRolling ? [boardCode, now-board.rolling_lifespan_ms] : [boardCode]
 	);
 	console.log("Thread count:", threadCount);
 	let pageCount = Math.ceil(threadCount[0]["c"] / PAGE_SIZE);
@@ -75,9 +78,10 @@ module.exports = async function(req, res) {
 					reply.parent_post_id = op.post_id
 			) AS replies_count
 			FROM posts AS op
-		 WHERE op.board_code=? AND op.parent_post_id=0
-		 ORDER BY bump_timestamp_ms DESC LIMIT ? OFFSET ?`,
-		[boardCode, boardCode, boardCode, PAGE_SIZE, offset]
+		 WHERE op.board_code=? AND op.parent_post_id=0`+(isRolling ? " AND op.timestamp_ms>?" : "")+
+		 ` ORDER BY bump_timestamp_ms DESC LIMIT ? OFFSET ?`,
+		isRolling ? [boardCode, boardCode, boardCode, now-board.rolling_lifespan_ms, PAGE_SIZE, offset]
+			: [boardCode, boardCode, boardCode, PAGE_SIZE, offset]
 	);
 	
 	let threads = [];
@@ -94,12 +98,47 @@ module.exports = async function(req, res) {
 			last_replies: replies
 		});
 	}
+
+	if (board.last_post_id>0 && isRolling && (board.title_ct || board.description_ct)) {
+		// If post #1 is absent/expired, the title and description have expired
+		let firstPostLookup = await mysql.query(
+			`SELECT COUNT(1) AS c FROM posts WHERE board_code=? AND post_id=1 AND timestamp_ms>?`,
+			[boardCode, now-board.rolling_lifespan_ms]
+		);
+		console.log("firstPostLookup:", firstPostLookup);
+		if (!firstPostLookup[0]["c"]) {
+			delete board.title_ct;
+			delete board.description_ct;
+		}
+	}
+
+	// Also, it's possible that the board has become empty but hasn't been cleaned up yet.
+	// If so, pretend as if expiration_date_ms has already been set.
+	if (!postsOnBoard.length && !board.expiration_date_ms) {
+		let lastThreadLookup = await mysql.query(
+			`SELECT timestamp_ms FROM posts WHERE board_code=? AND parent_post_id=0 ORDER BY timestamp_ms DESC LIMIT 1`,
+			[boardCode]
+		);
+		// This should return 1 result, because when the cleanup job deletes the expired threads, it also sets expiration_date_ms.
+		console.log("lastThreadLookup:", lastThreadLookup);
+		if (lastThreadLookup.length === 1) {
+			let calculatedExpirationTimeMs = lastThreadLookup[0].timestamp_ms + 2*board.rolling_lifespan_ms;
+			if (calculatedExpirationTimeMs <= now) {
+				res.status(404).send("Board not found");
+				mysql.end()
+				return;
+			} else {
+				board.expiration_date_ms = calculatedExpirationTimeMs;
+			}
+		}
+	}
+
 	mysql.end();
 
-	let board = boards[0];
 	delete board.writing_key_hash;
 	board.moderated = !!board.owner_key_hash;
 	delete board.owner_key_hash;
+	delete board.last_post_id;
 
 	let result = {
 		board: board,

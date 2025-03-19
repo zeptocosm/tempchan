@@ -31,7 +31,6 @@ button, label, input[type="checkbox"] {
 #creationForm {
 	max-width: min(100%, 720px);
 	padding: 10px;
-	padding-top: 0;
 	border: 5px solid black;
 	border-radius: 10px;
 	background-color: white;
@@ -88,6 +87,10 @@ div.formValue:last-child {
 
 #creationForm ul, #boardDescription {
 	text-align: justify;
+}
+#altBoardTitle, #altThreadBoardTitle {
+	text-decoration: line-through;
+	font-size: 18pt;
 }
 
 .post p {
@@ -165,6 +168,10 @@ div.formValue:last-child {
 	clear: both;
 }
 
+#threadHeader, #threadSubHeader, #expiredThreadNotice {
+	text-align: center;
+}
+
 #readOnlyMarker, #threadReadOnlyMarker, #dirReadOnlyMarker, .writersOnlyMarker {
 	font-variant: small-caps;
 	line-height: 0;
@@ -176,6 +183,20 @@ div.formValue:last-child {
 }
 .readOnly #readOnlyMarker, .readOnly #threadReadOnlyMarker, .readOnly #dirReadOnlyMarker {
 	display: inline;
+}
+.countdownPieOuter {
+	width: 12px;
+	height: 12px;
+	border-radius: 12px;
+	display: inline-block;
+	background-color: black;
+	padding: 1px;
+	cursor: text;
+}
+.countdownPieInner {
+	width: 12px;
+	height: 12px;
+	background-color: #eee;  
 }
 
 #qrModalOuter, #modModalOuter {
@@ -219,6 +240,12 @@ div.formValue:last-child {
 	padding-right: 20px;
 }
 
+#emptyRollingBoardNotice {
+	font-style: italic;
+}
+#emptyRollingBoardNotice span {
+	font-weight: bold;
+}
 
 </style>
 </head>
@@ -234,7 +261,7 @@ div.formValue:last-child {
 
 <div id="incompleteLinkPage" class="hidden">
 	<h2>Incomplete link!</h2>
-	<p>You've come here from an RSS feed for a board whose secret link is not in your history; therefore the board cannot be decrypted. Visit the board at its complete link (with <code>#</code> followed by 22&ndash;25 characters), and then reload this page.
+	<p>You've come here from an RSS feed for a board whose secret link is not in your history; therefore the board cannot be displayed. Visit the board at its complete link (with <code>#</code> followed by 22&ndash;25 characters), and then reload this page.
 	<p><a href="/">Back to home</a></p>
 </div>
 
@@ -255,10 +282,6 @@ div.formValue:last-child {
 
 <div id="creationForm">
 
-<h2 id="createBoardHeader" onclick="toggleCreationForm(this)" class="selected">Create a new board</h2>
-<h2 id="createDirectoryHeader" onclick="toggleCreationForm(this)" style="margin-left: 20px;">Create a new directory</h2>
-
-<div id="createBoardForm">
 <div class="formValue">
 	<div><b>Title</b></div>
 	<div>(max 100 characters)</div>
@@ -272,12 +295,6 @@ div.formValue:last-child {
 	<div style="display:block"><textarea cols="60" rows="3" placeholder="(optional)" id="newBoardDescription"></textarea></div>
 </div>
 <div class="formValue">
-	<div><b>Lifespan (days)</b></div>
-	<div>(max 35)</div>
-	<div><input type="text" style="max-width:30px" id="newBoardLifespan"/></div>
-	<div class="error" id="lifespanError"></div>
-</div>
-<div class="formValue">
 	<div><b>Moderation</b></div>
 	<div><a href="/about.html#how-does-moderation-work" rel="noopener noreferrer" target="_blank">(What is this?)</a></div>
 	<div><select id="newBoardModeration" onchange="toggleModerationExplanation()">
@@ -286,32 +303,33 @@ div.formValue:last-child {
 	</select></div>
 </div>
 
+<div class="formValue">
+	<div><b>Lifespan type</b></div>
+	<div><a href="/about.html#what-are-rolling-and-one-off-boards" rel="noopener noreferrer" target="_blank">(What is this?)</a></div>
+	<div><select id="lifespanType" onchange="toggleLifespanExplanation()">
+		<option value="rolling" selected>Rolling</option>
+		<option value="oneoff">One-off</option>
+	</select></div>
+</div>
+<div class="formValue">
+	<div><b>Lifespan (days)</b></div>
+	<div id="rollingLifespanLimits">(min 1, max 21)</div>
+	<div id="oneoffLifespanLimits">(min 0, max 35)</div>
+	<div><input type="text" style="max-width:30px" id="newBoardLifespan"/></div>
+	<div class="error" id="lifespanError"></div>
+</div>
 <ul>
 	<li>Once the board is created, these settings cannot be changed. You will be taken to the board's <b>writeable link</b>, which you can share with others to invite them to post on it.</li>
-	<li id="unmoderatedExplanation">Posts cannot be deleted once submitted.</li>
-	<li id="moderatedExplanation" class="hidden">You will also be given a <b>moderator key</b>, which you can use to hide posts from others.</li>
 	<li>The board will also have a <b>read-only link</b>, which lets people read but not post.</li>
-	<li>The board (and all of its posts) will be deleted at midnight (GMT) after the given lifespan has elapsed.</li>
+	<li id="unmoderatedExplanation">Posts cannot be deleted once submitted.</li>
+	<li id="moderatedExplanation" class="hidden">You will also be given a <b>moderator key</b>, which you can use to hide posts from ordinary users.</li>
+	<li id="rollingExplanation">Each thread on the board will be deleted once its original post has reached the given lifespan; the board itself will be deleted if it has been empty for the same length of time.</li>
+	<li id="oneoffExplanation" class="hidden">The board (and all of its posts) will be deleted at midnight (GMT) after the given lifespan has elapsed.</li>
 </ul>
 
 <button id="createBoardButton" onclick="createBoard()">Create board and take me there</button>
 
-</div> <!--createBoardForm-->
-
-<div id="createDirectoryForm" class="hidden">
-
-<ul style="margin-top: 0">
-	<li>Create a <b>directory</b> to save and share links to multiple boards. (<a href="/about.html#what-are-directories-and-how-do-they-work" target="_blank" rel="noopener noreferrer">Learn more</a>)</li>
-	<li>Once you create the directory, you can start adding boards to it. Share its <b>writeable link</b> to invite others to do the same.</li>
-	<li>The directory will also have a <b>read-only link</b>, which lets people see the boards in the directory, but not add new ones.</li>
-	<li>The directory will remain active as long as <b>any</b> of its listed boards are still active. You can maintain the directory indefinitely by continually adding new boards to it.</li>
-</ul>
-
-<button id="createDirectoryButton" onclick="createDirectory()">Create directory and take me there</button>
-
-</div> <!-- createDirectoryForm -->
-
-</div>
+</div> <!--creationForm-->
 
 <hr/>
 <p><a href="https://github.com/zeptocosm/tempchan" rel="noopener noreferrer" target="_blank">Source code</a> | Released under <a href="https://github.com/zeptocosm/tempchan/blob/main/LICENSE.txt" rel="noopener noreferrer" target="_blank">AGPLv3</a></p>
@@ -321,9 +339,9 @@ div.formValue:last-child {
 
 <div id="boardPage" class="hidden">
 
-<h1><a href="#">Tempchan</a> | <span id="boardTitle"></span><sup id="readOnlyMarker" title="You are viewing this board via its read-only link; you can only post here if you have the writeable link.">ro</sup></h1>
+<h1><a href="#">Tempchan</a> | <span id="altBoardTitle"></span> <span id="boardTitle"></span><sup id="readOnlyMarker" title="You are viewing this board via its read-only link; you can only post here if you have the writeable link.">ro</sup></h1>
 
-<h3 style="text-align: center">Time till deletion: <span id="boardDeletionCountdown"></span><br/>
+<h3 style="text-align: center"><span id="boardDeletionContainer">Time till board deletion: <span id="boardDeletionCountdown"></span><br/></span>
 <a href="" onclick="showQR(); return false">QR</a>
 &middot; <a id="rssLink" href="" target="_blank" rel="noopener noreferrer">RSS</a>
 <span id="otherAccessLinkSpan"> &middot; <a id="otherAccessLink" href=""></a></span>
@@ -384,11 +402,12 @@ div.formValue:last-child {
 
 <div id="threadPage" class="hidden">
 
-<h1><a href="#">Tempchan</a> | <a href="" id="threadBoardTitle"></a><sup id="threadReadOnlyMarker" title="You are viewing this board via its read-only link; you can only post here if you have the writeable link.">ro</sup> | <span id="threadHeader"></span></h1>
+<h1><a href="#">Tempchan</a> | <span id="altThreadBoardTitle"></span> <a href="" id="threadBoardTitle"></a><sup id="threadReadOnlyMarker" title="You are viewing this board via its read-only link; you can only post here if you have the writeable link.">ro</sup> | <span id="threadHeader"></span></h1>
 
-<h3 style="text-align: center">Time till deletion: <span id="threadDeletionCountdown"></span>
+<h3 id="threadSubHeader">Time till <span id="threadDeletionLabel"></span> deletion: <span id="threadDeletionCountdown"></span>
 <span id="threadModeratedSpan"><br/><a id="threadModeratedLink" href="" onclick="showModPanel(); return false"></a></span>
 </h3>
+<div id="expiredThreadNotice"></div>
 
 <div id="fullThread"></div>
 
@@ -564,6 +583,17 @@ const dirDisplayTitle = function(dirCode) {
 	return "Directory " + sum;
 };
 
+const boardDisplayTitle = function(boardCode) {
+	let sum = 0;
+	for (let i=0; i<boardCode.length; i++) {
+		let c = boardCode[i];
+		sum += ALPHABET.indexOf(c);
+		sum *= ALPHABET.length;
+		sum %= 1000000;
+	}
+	return "Board " + sum;
+};
+
 const readingKeyFromRootKey = function(rootKey) {
 	let isDir = rootKey.length === DIR_ROOT_KEY_LENGTH;
 	return hashToString(rootKey, READING_AFFIX, isDir ? DIR_READING_KEY_LENGTH : READING_KEY_LENGTH);
@@ -712,6 +742,22 @@ const getWriteableLinkFromHistory = function(readingKey) {
 	return "";
 };
 
+
+const getTitleFromHistory = function(readingKey, placeholderTitle) {
+	let myBoards = JSON.parse(window.localStorage.getItem(MY_BOARDS_LS_KEY) || "[]");
+	for (let i=0; i<myBoards.length; i++) {
+		let entry = myBoards[i];
+		if (entry.readingKey === readingKey) {
+			if (entry.title === placeholderTitle) {
+				return "";
+			} else {
+				return entry.title;
+			}
+		}
+	}
+	return "";
+}
+
 const deriveKeys = function(slug, wantWriteableLinkFromHistory) {
 	let secretKey;
 	let boardCode; // TODO rename this
@@ -737,37 +783,25 @@ const deriveKeys = function(slug, wantWriteableLinkFromHistory) {
 	return {secretKey, boardCode, readOnly, writingKey, writeableLinkFromHistory};
 };
 
+const toggleLifespanExplanation = function() {
+	let rolling = document.getElementById("lifespanType").value === "rolling";
+	document.getElementById("oneoffExplanation").classList[rolling ? "add" : "remove"]("hidden");
+	document.getElementById("oneoffLifespanLimits").classList[rolling ? "add" : "remove"]("hidden");
+	document.getElementById("rollingExplanation").classList[rolling ? "remove" : "add"]("hidden");
+	document.getElementById("rollingLifespanLimits").classList[rolling ? "remove" : "add"]("hidden");
+};
+
 const toggleModerationExplanation = function() {
 	let moderated = document.getElementById("newBoardModeration").value === "ownermoderated";
 	document.getElementById("unmoderatedExplanation").classList[moderated ? "add" : "remove"]("hidden");
 	document.getElementById("moderatedExplanation").classList[moderated ? "remove" : "add"]("hidden");
-}
-
-const toggleCreationForm = function(header) {
-	let createBoardHeader = document.getElementById("createBoardHeader");
-	let createDirHeader = document.getElementById("createDirectoryHeader");
-	let createBoardForm = document.getElementById("createBoardForm");
-	let createDirForm = document.getElementById("createDirectoryForm");
-	if (header.classList.contains("selected")) {
-		return;
-	}
-	if (header === createDirHeader) {
-		createDirHeader.classList.add("selected");
-		createDirForm.classList.remove("hidden");
-		createBoardHeader.classList.remove("selected");
-		createBoardForm.classList.add("hidden");
-	} else {
-		createBoardHeader.classList.add("selected");
-		createBoardForm.classList.remove("hidden");
-		createDirHeader.classList.remove("selected");
-		createDirForm.classList.add("hidden");
-	}
 };
 
 const createBoard = function() {
 	let title = document.getElementById("newBoardTitle").value.trim() || "(Untitled)";
 	let description = document.getElementById("newBoardDescription").value.trim() || "(No description)";
-	let lifespanDays = parseInt(document.getElementById("newBoardLifespan").value.trim());
+	let lifespanDays = parseFloat(document.getElementById("newBoardLifespan").value.trim());
+	let isRolling = document.getElementById("lifespanType").value === "rolling";
 	let moderated = document.getElementById("newBoardModeration").value === "ownermoderated";
 
 	clearErrors();
@@ -783,8 +817,14 @@ const createBoard = function() {
 	if (isNaN(lifespanDays)) {
 		document.getElementById("lifespanError").innerText = "Must be a number"
 		anyErrors = true;
-	} else if (lifespanDays > 35) {
+	} else if (lifespanDays !== parseInt(lifespanDays)) {
+		document.getElementById("lifespanError").innerText = "Must be a whole number"
+		anyErrors = true;
+	} else if ((isRolling && lifespanDays > 21) || (!isRolling && lifespanDays > 35)) {
 		document.getElementById("lifespanError").innerText = "Too large"
+		anyErrors = true;
+	} else if ((isRolling && lifespanDays < 1) || (!isRolling && lifespanDays < 0)) {
+		document.getElementById("lifespanError").innerText = "Too small"
 		anyErrors = true;
 	}
 	if (anyErrors) {
@@ -808,6 +848,7 @@ const createBoard = function() {
 
 	httpPost("/api/create_board", {
 		lifespan_days: lifespanDays,
+		is_rolling: isRolling,
 		title_ct: titleCtString,
 		description_ct: descriptionCtString,
 		board_key: boardKey,
@@ -820,7 +861,7 @@ const createBoard = function() {
 				prompt("The following is the moderator key for this board: make a copy and keep it safe! You must use this key in order to perform moderation actions (hiding/unhiding posts, and marking posts as \"Moderator\"). If you lose it, it cannot be recovered.", ownerKey);
 			}
 		} else {
-			alert("Error creating board! " + JSON.stringify(response));
+			alert("Error creating board! " + response.responseText);
 		}
 		button.disabled = null;
 	});
@@ -843,7 +884,7 @@ const createDirectory = function() {
 		if (response.ok) {
 			window.location.hash = "d/" + dirRootKey;
 		} else {
-			alert("Error creating directory! " + JSON.stringify(response));
+			alert("Error creating directory! " + response.responseText);
 		}
 		button.disabled = null;
 	});
@@ -899,7 +940,7 @@ const postReply = function() {
 			let newHash = currentHash + "#" + response.responseText;
 			window.location.hash = newHash;
 		} else {
-			alert("Error creating post! " + JSON.stringify(response));
+			alert("Error creating post! " + response.responseText);
 		}
 		button.disabled = null;
 	});
@@ -970,6 +1011,7 @@ const clearForms = function() {
 	document.getElementById("newBoardDescription").value = "";
 	document.getElementById("newBoardLifespan").value = "";
 	document.getElementById("newBoardModeration").selectedIndex = 0;
+	toggleLifespanExplanation();
 	toggleModerationExplanation();
 	document.getElementById("replyText").value = "";
 	document.getElementById("newThreadWo").checked = null;
@@ -999,6 +1041,7 @@ const PAGES = [
 const hideAllBut = function(pageToShow) {
 	hideQR();
 	stopCountdown();
+	document.body.classList.remove("fadeout");
 	for (let i=0; i<PAGES.length; i++) {
 		let page = PAGES[i];
 		let element = document.getElementById(page);
@@ -1039,8 +1082,17 @@ const THREAD_ON_BOARD_TEMPLATE =
 {{renderedText}}
 </div>
 {{lastRepliesHtml}}
-<a href="/#{{boardSlug}}/{{opId}}">{{replyLinkText}}</a>
+<div style="float: left"><a href="/#{{boardSlug}}/{{opId}}">{{replyLinkText}}</a></div>
+<div style="float: right">{{threadOnBoardDeletionCountdownHtml}}</div>
+<div style="clear: both"></div>
 </div>`;
+
+const EMPTY_ROLLING_BOARD_NOTICE_TEMPLATE =
+`<p id="emptyRollingBoardNotice">This empty board will be deleted in <span title="{{deletionTimestamp}}">{{deletionCountdown}}</span> unless someone makes a post.</p>`
+
+const THREAD_ON_BOARD_DELETION_TEMPLATE = `<span title="Thread will be deleted at {{threadDeletionTimestamp}}">{{threadDeletionCountdownAbbreviated}} {{threadDeletionCountdownPie}}</span>`;
+
+const COUNTDOWN_PIE_TEMPLATE = `<div class="countdownPieOuter"><div class="countdownPieInner" style="clip-path: path('{{path}}');"></div></div>`;
 
 const POST_PREVIEW_TEMPLATE =
 `<div class="post">
@@ -1058,7 +1110,7 @@ const MS_PER_DAY = 1000*60*60*24;
 const MS_PER_HOUR = 1000*60*60;
 const MS_PER_MINUTE = 1000*60;
 const MS_PER_SECOND = 1000;
-const formatDuration = function(durationMs) {
+const convertTime = function(durationMs) {
 	durationMs = Math.max(durationMs, 0);
 	let days = Math.floor(durationMs / MS_PER_DAY);
 	durationMs -= days*MS_PER_DAY;
@@ -1067,6 +1119,10 @@ const formatDuration = function(durationMs) {
 	let minutes = Math.floor(durationMs / MS_PER_MINUTE);
 	durationMs -= minutes*MS_PER_MINUTE;
 	let seconds = Math.floor(durationMs / MS_PER_SECOND);
+	return {days, hours, minutes, seconds};
+};
+const formatDuration = function(durationMs) {
+	let {days, hours, minutes, seconds} = convertTime(durationMs);
 	if (days === 0 && hours === 0 && minutes < 10) {
 		// When <10min, pad it out so it doesn't change size during the countdown
 		return minutes + " minutes " + (seconds>=10 ? seconds : "0"+seconds) + " seconds" 
@@ -1076,6 +1132,39 @@ const formatDuration = function(durationMs) {
 			+ (hours ? hours + " hour" + (hours === 1 ? "" : "s") + " " : "")
 			+ (minutes ? minutes + " minute" + (minutes === 1 ? "" : "s") : "");
 	}
+};
+
+const formatDurationAbbreviated = function(durationMs) {
+	let {days, hours, minutes, seconds} = convertTime(durationMs);
+	if (!days && !hours && !minutes) {
+		return seconds + "s";
+	} else {
+		return (days ? days + "d " : "")
+			+ (hours ? hours + "h " : "")
+			+ (minutes ? minutes + "m" : "").trim();
+	}
+};
+
+const createCountdownPie = function(fractionElapsed) {
+	let angle = fractionElapsed * 2 * Math.PI;
+	let x = 6 - 6*Math.sin(angle);
+	let y = 6 - 6*Math.cos(angle);
+	let coords = "" + x + " " + y;
+	let path;
+	if (fractionElapsed <= 0.5) {
+		path = "M 6 6 L 6 0 A 6 6 1 0 0 "+coords+" Z";
+	} else {
+		path = "M 6 6 L 6 0 A 6 6 1 1 0 "+coords+" Z";
+	}
+	return COUNTDOWN_PIE_TEMPLATE.replaceAll("{{path}}", path);
+};
+
+const createThreadOnBoardDeletionSpan = function(opTimestampMs, rollingLifespanMs, now) {
+	let deletionTimestamp = opTimestampMs+rollingLifespanMs;
+	return THREAD_ON_BOARD_DELETION_TEMPLATE
+		.replaceAll("{{threadDeletionTimestamp}}", formatTimestamp(deletionTimestamp))
+		.replaceAll("{{threadDeletionCountdownAbbreviated}}", formatDurationAbbreviated(deletionTimestamp-now))
+		.replaceAll("{{threadDeletionCountdownPie}}", createCountdownPie((now-opTimestampMs)/rollingLifespanMs));
 };
 
 let countdownInterval = void(0);
@@ -1110,7 +1199,7 @@ const showDir = function(dirSlug) {
 				removeMyLink(dirSlug);
 				showBadLink();
 			} else {
-				alert("Error getting directory! " + JSON.stringify(response));
+				alert("Error getting directory! " + response.responseText);
 			}
 			return;
 		}
@@ -1215,7 +1304,7 @@ const showBoard = function(boardSlug, pageNum) {
 			if (response.status === 404) {
 				showBadLink();
 			} else {
-				alert("Error getting board! " + JSON.stringify(response));
+				alert("Error getting board! " + response.responseText);
 			}
 			return;
 		}
@@ -1226,17 +1315,26 @@ const showBoard = function(boardSlug, pageNum) {
 		let pageCount = resObj.page_count;
 
 		// Board info:
-		let titleCt = boardObj.title_ct;
-		let descriptionCt = boardObj.description_ct;
+		let titleCt = boardObj.title_ct || "";
+		let descriptionCt = boardObj.description_ct || "";
 		let isModerated = boardObj.moderated;
 		let expirationDateMs = boardObj.expiration_date_ms;
-		let title = decrypt(secretKey, titleCt);
-		let description = decrypt(secretKey, descriptionCt);
+		let rollingLifespanMs = boardObj.rolling_lifespan_ms;
+		let description = descriptionCt && decrypt(secretKey, descriptionCt);
 
-		addMyLink(boardSlug, title, expirationDateMs);
-
-		document.getElementById("htmlTitle").innerText = title + " : Tempchan" + (readOnly ? " [read-only]" : "");
+		let title = titleCt ? decrypt(secretKey, titleCt) : boardDisplayTitle(boardCode);
+		let titleFromHistory = titleCt ? "" : getTitleFromHistory(secretKey, title);
+		document.getElementById("altBoardTitle").innerText = titleFromHistory;
 		document.getElementById("boardTitle").innerText = title;
+		if (titleFromHistory) {
+			document.getElementById("htmlTitle").innerText = titleFromHistory + " (" + title + ") : Tempchan" + (readOnly ? " [read-only]" : "");
+		} else {
+			document.getElementById("htmlTitle").innerText = title + " : Tempchan" + (readOnly ? " [read-only]" : "");
+		}
+
+		// If the title has expired, this should still not erase it from history
+		addMyLink(boardSlug, title, rollingLifespanMs ? 0 : expirationDateMs);
+
 		document.getElementById("boardDescription").innerHTML = renderText(description);
 		document.getElementById("rssLink").href = "/api/rss?board=" + boardCode;
 		document.getElementById("boardPage").classList[readOnly ? "add" : "remove"]("readOnly");
@@ -1273,6 +1371,7 @@ const showBoard = function(boardSlug, pageNum) {
 		// Thread listing:
 		let renderedTextPlaceholder = secureRandomString(50); // TODO get rid of this ugly hack
 		let threadsHtml = "";
+		let now = +new Date();
 		for (let i=0; i<threads.length; i++) {
 			let thread = threads[i];
 			let modRedact = thread.op.mod_status === 1;
@@ -1317,23 +1416,40 @@ const showBoard = function(boardSlug, pageNum) {
 				.replaceAll("{{replyLinkText}}", readOnly ? "View thread" : "Reply")
 				.replaceAll("{{lastRepliesHtml}}", lastRepliesHtml)
 				.replaceAll("{{renderedText}}", opText)
+				.replaceAll("{{threadOnBoardDeletionCountdownHtml}}",
+					rollingLifespanMs ?
+					createThreadOnBoardDeletionSpan(thread.op.timestamp_ms, rollingLifespanMs, now) : "")
 				.replaceAll(renderedTextPlaceholder, "{{renderedText}}");
 			threadsHtml += threadHtml;
 		}
 		document.getElementById("threadsView").innerHTML = threadsHtml;
 
 		let signedInAsOwner = isModerated && !!getOwnerKeyFromHistory(boardCode);
-		let timeTillDeletionMs = expirationDateMs - new Date();
-		document.getElementById("boardDeletionCountdown").innerText = formatDuration(timeTillDeletionMs);
-		document.getElementById("boardDeletionCountdown").title = formatTimestamp(expirationDateMs);
+		hideAllBut("boardPage");
+		if (!rollingLifespanMs) {
+			document.getElementById("boardDeletionContainer").classList.remove("hidden");
+			let timeTillDeletionMs = expirationDateMs - new Date();
+			document.getElementById("boardDeletionCountdown").innerText = formatDuration(timeTillDeletionMs);
+			document.getElementById("boardDeletionCountdown").title = formatTimestamp(expirationDateMs);
+			if (timeTillDeletionMs < 10*MS_PER_MINUTE) {
+				startCountdown(document.getElementById("boardDeletionCountdown"), expirationDateMs);
+			}
+		} else {
+			document.getElementById("boardDeletionContainer").classList.add("hidden");
+			if (!threads.length && expirationDateMs) {
+				let timeTillDeletionMs = expirationDateMs - new Date();
+				document.getElementById("threadsView").innerHTML = EMPTY_ROLLING_BOARD_NOTICE_TEMPLATE
+					.replaceAll("{{deletionCountdown}}", formatDuration(timeTillDeletionMs))
+					.replaceAll("{{deletionTimestamp}}", formatTimestamp(expirationDateMs));
+			}
+		}
+
 		setUpModFeatures(isModerated, "boardModeratedLink", "boardModeratedSpan", "postAsNameSpan", readOnly, signedInAsOwner);
 		clearForms();
-		hideAllBut("boardPage");
-		if (timeTillDeletionMs < 10*MS_PER_MINUTE) {
-			startCountdown(document.getElementById("boardDeletionCountdown"), expirationDateMs);
-		}
+
 	});
 };
+
 
 const QR_DESIRED_SIZE = 145;
 const QR_CELL_SIZE = 5;
@@ -1429,34 +1545,69 @@ const WO_MARKER = "<sup class='writersOnlyMarker' title='Visible to writers only
 
 const MOD_HIDER_TEMPLATE = "<a href='' onclick='modHide(this, {{postId}}, {{setHide}}); return false' title='{{title}}'>{{symbol}}</a>";
 
+const EXPIRED_THREAD_NOTICE_TEMPLATE = `<p>The thread you're looking for doesn't exist, or has expired.</p>
+	<p><a href="/#{{boardSlug}}">Back to board</a></p>`;
+
 const showThread = function(boardSlug, opId, highlitPost) {
 	let {secretKey, boardCode, readOnly, writingKey} = deriveKeys(boardSlug);
+
+	// reset elements from expired thread page
+	document.getElementById("expiredThreadNotice").innerHTML = "";
+	document.getElementById("threadSubHeader").classList.remove("hidden");
+	document.getElementById("newPostContainer").classList.remove("hidden");
 
 	httpGet("/api/get_thread?board_code=" + encodeURIComponent(boardCode) + "&op_id=" + opId, function(response) {
 		if (!response.ok) {
 			if (response.status === 404) {
 				showBadLink();
 			} else {
-				alert("Error getting thread! " + JSON.stringify(response));
+				alert("Error getting thread! " + response.responseText);
 			}
 			return;
 		}
-		currentBoardCode = boardCode;
 		let res = JSON.parse(response.responseText);
-		let posts = res.posts;
-		if (!posts || posts[0].parent_post_id) {
-			// Don't allow linking directly to a single reply
-			showBadLink();
+		if (res.redirect_to_parent) {
+			window.location.replace("#"+boardSlug+"/"+res.redirect_to_parent+"#"+opId);
 			return;
 		}
+		currentBoardCode = boardCode;
+		let posts = res.posts;
 		let board = res.board;
+		let titleCt = board.title_ct || "";
+		let boardTitle = titleCt ? decrypt(secretKey, titleCt) : boardDisplayTitle(boardCode);
+		let boardTitleFromHistory = titleCt ? "" : getTitleFromHistory(secretKey, boardTitle);
+		document.getElementById("altThreadBoardTitle").innerText = boardTitleFromHistory;
+		document.getElementById("threadBoardTitle").innerText = boardTitle;
+		document.getElementById("threadBoardTitle").href = "/#" + boardSlug;
+		if (!posts.length) {
+			// The board exists, but the thread doesn't
+			document.getElementById("threadSubHeader").classList.add("hidden");
+			document.getElementById("newPostContainer").classList.add("hidden");
+			if (boardTitleFromHistory) {
+				document.getElementById("htmlTitle").innerText = boardTitleFromHistory + " (" +
+					boardTitle + ") | thread not found : Tempchan" + (readOnly ? " [read-only]" : "");
+			} else {
+				document.getElementById("htmlTitle").innerText =
+					boardTitle + " | thread not found : Tempchan" + (readOnly ? " [read-only]" : "");
+			}
+			document.getElementById("threadHeader").innerText = "thread not found";
+			document.getElementById("fullThread").innerHTML = "";
+			document.getElementById("expiredThreadNotice").innerHTML = EXPIRED_THREAD_NOTICE_TEMPLATE.replaceAll("{{boardSlug}}", boardSlug);
+			hideAllBut("threadPage");
+			return;
+		}
 		let isModerated = board.moderated;
-		let boardTitle = decrypt(secretKey, board.title_ct);
 		let expirationDateMs = board.expiration_date_ms;
-		addMyLink(boardSlug, boardTitle, expirationDateMs);
+		let rollingLifespanMs = board.rolling_lifespan_ms;
+		addMyLink(boardSlug, boardTitle, rollingLifespanMs ? 0 : expirationDateMs);
 
-		document.getElementById("htmlTitle").innerText =
-			boardTitle + " | #" + opId + " : Tempchan" + (readOnly ? " [read-only]" : "");
+		if (boardTitleFromHistory) {
+			document.getElementById("htmlTitle").innerText = boardTitleFromHistory + " (" +
+				boardTitle + ") | #" + opId + " : Tempchan" + (readOnly ? " [read-only]" : "");
+		} else {
+			document.getElementById("htmlTitle").innerText =
+				boardTitle + " | #" + opId + " : Tempchan" + (readOnly ? " [read-only]" : "");
+		}
 		
 		// First pass: Assemble the list of postIds
 		let postIdsOnPage = [];
@@ -1558,21 +1709,31 @@ const showThread = function(boardSlug, opId, highlitPost) {
 		}
 
 		document.getElementById("fullThread").innerHTML = threadHtml;
-		document.getElementById("threadBoardTitle").innerText = boardTitle;
-		document.getElementById("threadBoardTitle").href = "/#" + boardSlug;
 		fillThreadHeader(boardSlug, opId, highlitPost);
 
-		let timeTillDeletionMs = expirationDateMs - new Date();
-		document.getElementById("threadDeletionCountdown").innerText = formatDuration(timeTillDeletionMs);
-		document.getElementById("threadDeletionCountdown").title = formatTimestamp(expirationDateMs);
+		hideAllBut("threadPage");
+		if (!rollingLifespanMs) {
+			let timeTillDeletionMs = expirationDateMs - new Date();
+			document.getElementById("threadDeletionCountdown").innerText = formatDuration(timeTillDeletionMs);
+			document.getElementById("threadDeletionCountdown").title = formatTimestamp(expirationDateMs);
+			document.getElementById("threadDeletionLabel").innerText = "board";
+			if (timeTillDeletionMs < 10*MS_PER_MINUTE) {
+				startCountdown(document.getElementById("threadDeletionCountdown"), expirationDateMs);
+			}
+		} else {
+			let threadDeletionTime = posts[0].timestamp_ms + rollingLifespanMs;
+			let timeTillDeletionMs = threadDeletionTime - new Date();
+			document.getElementById("threadDeletionCountdown").innerText = formatDuration(timeTillDeletionMs);
+			document.getElementById("threadDeletionCountdown").title = formatTimestamp(threadDeletionTime);
+			document.getElementById("threadDeletionLabel").innerText = "thread";
+			if (timeTillDeletionMs < 10*MS_PER_MINUTE) {
+				startCountdown(document.getElementById("threadDeletionCountdown"), threadDeletionTime);
+			}
+		}
+
 		clearForms();
 		document.getElementById("threadPage").classList[readOnly ? "add" : "remove"]("readOnly");
 		setUpModFeatures(isModerated, "threadModeratedLink", "threadModeratedSpan", "replyAsNameSpan", readOnly, signedInAsOwner);
-		hideAllBut("threadPage");
-
-		if (timeTillDeletionMs < 10*MS_PER_MINUTE) {
-			startCountdown(document.getElementById("threadDeletionCountdown"), expirationDateMs);
-		}
 
 		if (highlitPost) {
 			let highlitPostElement = document.getElementById("post" + highlitPost);
@@ -1646,7 +1807,7 @@ const modHide = function(link, postId, setHide) {
 				window.location.reload();
 			} else {
 				link.innerText = oldLinkText;
-				alert("Could not perform moderation action! " + JSON.stringify(response));
+				alert("Could not perform moderation action! " + response.responseText);
 			}
 		});
 	}
@@ -1741,7 +1902,7 @@ const newDirEntry = function() {
 		if (response.ok) {
 			window.location.reload();
 		} else {
-			alert("Error adding board! " + JSON.stringify(response));
+			alert("Error adding board! " + response.responseText);
 		}
 		button.disabled = null;
 	});
@@ -1789,7 +1950,7 @@ const newThread = function() {
 			let newHash = boardSlug + "/" + response.responseText;
 			window.location.hash = newHash;
 		} else {
-			alert("Error creating post! " + JSON.stringify(response));
+			alert("Error creating post! " + response.responseText);
 		}
 		button.disabled = null;
 	});

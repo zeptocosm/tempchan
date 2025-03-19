@@ -4,7 +4,9 @@ CREATE TABLE IF NOT EXISTS boards (
 	title_ct VARCHAR(1000),
 	description_ct TEXT,
 	writing_key_hash VARCHAR(100),
-	owner_key_hash VARCHAR(100)
+	owner_key_hash VARCHAR(100),
+	rolling_lifespan_ms BIGINT NOT NULL DEFAULT 0,
+	last_post_id INT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS posts (

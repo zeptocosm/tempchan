@@ -1,14 +1,19 @@
-# Invoke the /api/cleanup endpoint once a day to delete boards that have expired.
-# If you're running your own instance, change the URL in the last line accordingly.
+# Invoke the /api/cleanup endpoint 4 times a day to delete boards and posts that have expired.
+# If you're running your own instance, change the URL in the last line accordingly, and make sure
+# to set the correct credentials (see the README for details).
 name: cleanup-cronjob
 on:
   schedule:
-    - cron: '5 0 * * *'
+    - cron: '5 */6 * * *'
 jobs:
   cron:
     runs-on: ubuntu-latest
     steps:
       - name: Clean up expired rows
+        env:
+            CLEANUP_USER: ${{ vars.CLEANUP_USER }}
+            CLEANUP_PASSWORD: ${{ secrets.CLEANUP_PASSWORD }}
         run: |
           curl --request POST \
-          --url 'https://tempchan.com/api/cleanup'
+          --url 'https://tempchan.com/api/cleanup' \
+          -u "$CLEANUP_USER:$CLEANUP_PASSWORD"

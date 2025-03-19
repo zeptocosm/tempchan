@@ -37,7 +37,7 @@ You must also set `process.env.CA_PATH` if the path to the certificate authority
 
 The database must be initialized as described in `schema.sql`.
 
-There is also a cronjob defined in `.github/workflows/cron.yaml` that pings the `/api/cleanup` endpoint regularly; this purges the databse of all content that is expired and no longer visible to users. If you run your own instance, make sure that this or a similar cronjob (with the URL appropriately changed) is set up. This endpoint is secured by HTTP Basic Authentication in order to prevent third-parties from triggering it; the server must therefore set the following environment variables:
+There is also a cronjob defined in `.github/workflows/cron.yaml` that pings the `/api/cleanup` endpoint regularly; this purges the database of all content that is expired and no longer visible to users. If you run your own instance, make sure that this or a similar cronjob (with the URL appropriately changed) is set up. This endpoint is secured by HTTP Basic Authentication in order to prevent third-parties from triggering it; the server must therefore set the following environment variables:
 
 ```
 process.env.CLEANUP_USER

@@ -34,17 +34,30 @@ const validateAlphabet = function(string) {
 module.exports = async function(req, res) {
 	const { body } = req;
 	let lifespanDays = parseInt(body.lifespan_days);
-	if (isNaN(lifespanDays) || lifespanDays < 0 || lifespanDays > 35) {
+	if (isNaN(lifespanDays) ||
+		(body.is_rolling && (lifespanDays < 1 || lifespanDays > 21)) ||
+		(!body.is_rolling && (lifespanDays < 0 || lifespanDays > 35))
+	) {
 		res.status(400).send("Invalid lifespan_days");
 		mysql.end();
 		return;
 	}
-	// The next GMT midnight after now+lifespan:
-	let expirationDateMs = +new Date(
-		new Date(
-			+new Date() + (lifespanDays+1)*MS_PER_DAY
-		).toISOString().slice(0,10) + "T00:00:00.000Z"
-	);
+	
+	let expirationDateMs;
+	let rollingLifespanMs;
+	let now = +new Date();
+	if (body.is_rolling) {
+		rollingLifespanMs = lifespanDays*MS_PER_DAY;
+		expirationDateMs = now + rollingLifespanMs; // this will be erased when the first post is made
+	} else {
+		// The next GMT midnight after now+lifespan:
+		expirationDateMs = +new Date(
+			new Date(
+				now + (lifespanDays+1)*MS_PER_DAY
+			).toISOString().slice(0,10) + "T00:00:00.000Z"
+		);
+		rollingLifespanMs = 0;
+	}
 
 	let titleCt = body.title_ct;
 	if (!titleCt) {
@@ -96,8 +109,8 @@ module.exports = async function(req, res) {
 
 	// There's a race condition here but it's very unlikely to happen
 	let result = await mysql.query(
-		`INSERT INTO boards   (board_code, expiration_date_ms, title_ct, description_ct, writing_key_hash, owner_key_hash)
-		 VALUES (?,?,?,?,?,?)`, [boardKey, expirationDateMs,   titleCt,  descriptionCt,  writingKeyHash,   ownerKeyHash]);
+		`INSERT INTO boards       (board_code, expiration_date_ms, title_ct, description_ct, writing_key_hash, owner_key_hash, rolling_lifespan_ms, last_post_id)
+		 VALUES (?,?,?,?,?,?,?,0)`, [boardKey, expirationDateMs,   titleCt,  descriptionCt,  writingKeyHash,   ownerKeyHash,   rollingLifespanMs]);
 	console.log("INSERT INTO boards:", result);
 	
 	mysql.end()

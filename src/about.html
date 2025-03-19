@@ -40,7 +40,7 @@ td:first-child {
 <body>
 <div id="main">
 <h1>🌸 <a href="/">Tempchan</a> | About</h1>
-<p>Last updated 2022-10-03.</p>
+<p>Last updated 2025-03-19.</p>
 
 <ul>
 	<li><a href="#what-is-tempchan">What is Tempchan?</a></li>
@@ -54,7 +54,8 @@ td:first-child {
 	</ul>
 	</li>
 	<li><a href="#how-does-moderation-work">How does moderation work?</a></li>
-	<li><a href="#what-are-directories-and-how-do-they-work">What are "directories" and how do they work?</a></li>
+	<li><a href="#what-are-rolling-and-one-off-boards">What are "rolling" and "one-off" boards?</a></li>
+	<li><a href="#why-were-my-boards-title-and-description-deleted">Why were my board's title and description deleted?</a></li>
 	<li><a href="#how-does-the-rss-feed-work">How does the RSS feed work?</a></li>
 	<li><a href="#how-secure-is-tempchan">How secure is Tempchan?</a></li>
 	<li><a href="#is-tempchan-being-actively-worked-on">Is Tempchan being actively worked on?</a></li>
@@ -67,7 +68,7 @@ td:first-child {
 <ul>
     <li><b>Anonymous</b>: No account is required.</li>
     <li><b>Private</b>: Each board has a secret link, and only people with the link can read or write posts.</li>
-    <li><b>Temporary</b>: The board is deleted after a certain time.</li>
+    <li><b>Temporary</b>: Everything on the board is deleted after a certain time.</li>
 </ul>
 
 <h2><a name="how-do-i-use-tempchan">How do I use Tempchan?</a></h2>
@@ -80,7 +81,7 @@ td:first-child {
 <li>Post a link somewhere on the internet (Twitter, Reddit, etc.) where the people you want to talk with are likely to see it.</li>
 <li>Use Tempchan for brainstorming within your company or team.</li>
 <li>Print out a board's link on posters or cards and advertise it within your neighborhood, school, office, etc.</li>
-<li>Create a one-off Tempchan board to stay in touch with someone you just met, without revealing any personal information.</li>
+<li>Create a single-use Tempchan board to stay in touch with someone you just met, without revealing any personal information.</li>
 <li>Anything else you can think of!</li>
 </ul>
 
@@ -128,25 +129,31 @@ like this.</p></td>
 <p>Unless specified otherwise when created, Tempchan boards are <b>Unmoderated</b>. This means that the creator of a board has no special privileges over the other members. Keep this in mind when deciding whom to entrust with your board link!</p>
 <p>If a board is marked as <b>Moderated</b>, the creator can set posts as "hidden" as well as mark their own posts with the label "Moderator" (rather than the default "Anonymous"). Such hidden posts appear to others as <span class="redacted">[Hidden by moderator]</span>. However, the board creator still cannot ban people or edit the content of posts, the board title/description, or its lifespan.</p>
 
-<h2><a name="what-are-directories-and-how-do-they-work">What are "directories" and how do they work?</a></h2>
-<p>A <b>directory</b> is a list of board links. Unlike the boards themselves, a directory does not expire at a pre-set time&mdash;it stays up as long as <b>any</b> of its listed boards are still active. Therefore, a directory may survive indefinitely as long as people keep adding new boards to it.</p>
-<p>Directories are an easy way to continually share a collection of boards with the same group of people, without having to share a new link every time you create a new board. If you are given a directory link, you will always be able to access the directory at that link, even if all of the boards have been replaced with new ones since then.</p>
-<p>Other things to note about directories:
+<h2><a name="what-are-rolling-and-one-off-boards">What are "rolling" and "one-off" boards?</a></h2>
+<p>All Tempchan posts are eventually deleted after a certain time elapses. The board creator has two choices for how this deletion works:</p>
 <ul>
-<li>The same board may be listed under more than one directory.</li>
-<li>Adding a board to a directory <b>does not</b> create a link from the board back to the directory&mdash;the users of that board are not automatically given access to the directory or to its other boards.</li>
-<li>Unlike boards, directories do not have titles or descriptions. (Instead, they are referred to by a random number.)</li>
-<li>The board links listed in the directory may themselves be either writeable or read-only board links, separately from whether you are viewing the directory through <b>its</b> writeable or read-only link.</li>
-</ul></p>
+	<li>On a <b>rolling</b> board, each individual thread has a fixed lifespan, starting from when its first post is made. After that, the entire thread is deleted (including its later posts which may have been there for only a short time), but the rest of the board's threads remain. The board stays alive as long as people keep posting; however, if the board has been empty with no new posts for the specified time, the whole board will be deleted.
+		<ul><li>You can tell a board is rolling because it will show the remaining time for each thread on the main board page, and say "Time till thread deletion:" at the top of every thread page.</li></ul>
+	</li>
+	<li>A <b>one-off</b> board is simpler&mdash;nothing is deleted until the very end of the board's lifespan, at which point the entire board is deleted.
+		<ul><li>You can tell a board is a one-off because it will say "Time till board deletion:" at the top of every page.</li></ul>
+	</li>
+</ul>
+<p>One-off boards are useful if you have a group of people coming together for a single, time-limited purpose, such as for a brainstorming exercise or for planning an event. Rolling boards can be used to have ongoing discussions with a group whose membership gradually evolves as the board link gets spread around.</p>
+
+<h2><a name="why-were-my-boards-title-and-description-deleted">Why were my board's title and description deleted?</a></h2>
+<p>The title and description on a <a href="#what-are-rolling-and-one-off-boards">rolling board</a> will eventually expire, although people can still keep posting to it as before. This happens when the first thread (starting with post #1) expires. After that, the board will be titled with a random number (such as "Board 740280") to distinguish it from other boards.</p>
+<p>The basic principle of Tempchan is that <i>nothing lasts forever</i>. In keeping with this, even though a rolling board might stay active indefinitely, there is no particular piece of text&mdash;neither a post, nor the title or description of the board&mdash;that will persist. If the title is still in your history, it will be shown <s>crossed out</s> for your personal convenience; however, people who first encounter the board after its title has expired will not see the old title at all.</p>
+<p>On a one-off board, the title and description do not expire, because everything will disappear anyway when the board itself expires.</p>
 
 <h2><a name="how-does-the-rss-feed-work">How does the RSS feed work?</a></h2>
 <p>To be notified of new posts on a board, you can subscribe with your RSS reader of choice by way of the "RSS" link on the board's homepage. However, because all content is encrypted, the feed will only contain garbled text; in order to read the posts, you must separately load them in your browser. If you follow the links from the feed, you will be able to read the posts as long as the board's secret link is already in your history.</p>
 
 <h2><a name="how-secure-is-tempchan">How secure is Tempchan?</a></h2>
-<p>Tempchan is designed to disclose as little information as possible to the server. All posts, board titles, board descriptions, and board links added to directories are encrypted locally using the key contained in the secret link, which means that nobody without that link&mdash;not even the server admins&mdash;can read them. The server only sees the date and time of each post, its approximate length, and how the posts are grouped into threads and boards. (The server also sees which boards are linked from which directories, but not the secret board links themselves.) The secret links are never known by the server; no cookies or analytics are used.</p>
+<p>Tempchan is designed to disclose as little information as possible to the people running the site. All posts, board titles, and board descriptions are encrypted locally using the key contained in the secret link, which means that nobody without that link&mdash;not even the server admins&mdash;can read them. The server only sees the date and time of each post, its approximate length, and how the posts are grouped into threads and boards. The secret links are never known by the server; no cookies or analytics are used.</p>
 
 <h2><a name="is-tempchan-being-actively-worked-on">Is Tempchan being actively worked on?</a></h2>
-<p>Yes! Several features are currently in the pipeline, such as moderation and board directories.</p>
+<p>Not really, although new features are occasionally added.</p>
 
 <h2><a name="how-can-i-contribute">How can I contribute?</a></h2>
 <p>Tempchan is open-source. You can contribute to the project by opening tickets and pull-requests on <a href="https://github.com/zeptocosm/tempchan" rel="noopener noreferrer" target="_blank">GitHub</a>, or by setting up your own instance. The <a href="https://github.com/zeptocosm/tempchan/blob/main/README.md" rel="noopener noreferrer" target="_blank">README</a> on GitHub also contains a link to a "Tempchan Meta" board where you can leave feedback.</p>
